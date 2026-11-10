@@ -113,6 +113,12 @@ Every request is recorded here as a todo, in the order it was given. The goals b
         https://niccokunzmann.github.io/satyrn-getting-started/ (all pages 200; a fresh clone works on its own)
   - [x] Choose a license. → MIT (`LICENSE`, like the satyrn-ai repos), declared in pyproject.toml
 
+- [x] License: MIT. → `LICENSE`, pyproject.toml, README, docs footer
+- [ ] Use the REUSE project (reuse.software): every file has its license and copyright; `reuse lint` passes.
+- [ ] Add a pre-commit hook for formatting, like in icalendar.
+- [ ] Install the latest ai-prompt-auto-commit.
+- [x] Make the README mostly empty and point to the docs. → the Satyrn projects table moved to docs/projects.md
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`

@@ -79,6 +79,7 @@ models
 how-it-works
 reproducibility
 satyrn-engine
+projects
 reference
 contributing
 ```
