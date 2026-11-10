@@ -95,6 +95,7 @@ models
 :caption: Background
 
 how-it-works
+speed
 reproducibility
 satyrn-engine
 projects

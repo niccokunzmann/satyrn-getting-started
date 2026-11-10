@@ -260,6 +260,17 @@ Every request is recorded here as a todo, in the order it was given. The goals b
 
 - [x] Finish this up and publish the current state. → committed, pushed, deploy checked
 
+- [ ] Guess and check different ways to speed up the models' first responses.
+- [ ] Take an hour for A/B tests of theories about what makes the model slow; write a report into a file and
+      build the optimizations that work.
+  - [ ] Speed-ups without an effect on quality are built in; those that trade quality are documented with
+        how to use them and the trade-off.
+  - [ ] The default should be fast: the fastest configuration that still passes the tasks; the quality
+        settings are documented. But also reasonable quality: a faster setting only becomes the default
+        when the model still solves the tasks reliably.
+  - [ ] One speed-up at a time: measure, document in docs/speed.md, push; evaluate all at the end. An
+        interruption must never leave the repository unpushed or undocumented.
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`

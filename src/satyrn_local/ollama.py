@@ -9,13 +9,17 @@ import os
 import re
 import signal
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
 from collections.abc import Iterator
 from pathlib import Path
 
+from . import settings
 from .layout import IS_WINDOWS, Layout, Pins
+
+KEEP_ALIVE = "30m"  # how long an idle model stays in memory (OLLAMA_KEEP_ALIVE overrides it)
 
 
 def server_env(layout: Layout, pins: Pins) -> dict[str, str]:
@@ -29,7 +33,7 @@ def server_env(layout: Layout, pins: Pins) -> dict[str, str]:
         OLLAMA_HOST=f"127.0.0.1:{pins.port}",
         OLLAMA_CONTEXT_LENGTH=str(pins.context_length),
     )
-    env.setdefault("OLLAMA_KEEP_ALIVE", "30m")
+    env.setdefault("OLLAMA_KEEP_ALIVE", KEEP_ALIVE)
     return env
 
 
@@ -121,7 +125,29 @@ def start(layout: Layout, pins: Pins) -> None:
     layout.pidfile.write_text(f"{proc.pid}\n")
     wait_up(pins)
     print(f"Ollama started (pid {proc.pid}) on 127.0.0.1:{pins.port}; log: {layout.logfile}")
+    preload(pins, settings.default_model(layout, pins))
     print("stop it with: satyrn stop")
+
+
+def preload(pins: Pins, model: str) -> None:
+    """Load ``model`` into memory in the background, so the first request does not wait for it."""
+    if not is_up(pins):
+        return
+    body = json.dumps({"model": model, "keep_alive": KEEP_ALIVE}).encode()
+    code = (
+        "import sys, urllib.request\n"
+        "request = urllib.request.Request(sys.argv[1], data=sys.argv[2].encode(), "
+        "headers={'Content-Type': 'application/json'})\n"
+        "urllib.request.urlopen(request, timeout=900)\n"
+    )
+    subprocess.Popen(
+        [sys.executable, "-c", code, f"http://127.0.0.1:{pins.port}/api/generate", body.decode()],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=not IS_WINDOWS,
+    )
+    print(f"loading {model} into memory in the background (about half a minute)")
 
 
 def stop(layout: Layout, pins: Pins) -> None:

@@ -177,7 +177,8 @@ def cmd_check(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     if not ollama.is_up(pins):
         raise SystemExit("Ollama is not running; start it first: satyrn start")
     model = args.model or settings.default_model(layout, pins)
-    outcome = bench.run_sqrt(layout, pins, model, effort=args.effort, timeout=args.timeout)
+    variant = bench.Variant(effort=args.effort, harness=args.harness or settings.default_harness(layout))
+    outcome = bench.run_sqrt(layout, pins, model, timeout=args.timeout, variant=variant)
     exit_code = "time limit" if outcome.exit_code is None else outcome.exit_code
     print(f"interpreter finished in {outcome.seconds:.0f}s ({exit_code}); {outcome.detail}")
     if not outcome.passed:
@@ -201,6 +202,8 @@ def cmd_bench(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
         instructions=args.instructions,
         overrides=tuple(args.set),
         warm=args.warm,
+        harness=args.harness or settings.default_harness(layout),
+        warmup=args.warmup,
     )
     outcomes = bench.benchmark(layout, pins, models, runs=args.runs, timeout=args.timeout, variant=variant)
     return 0 if all(o.passed for o in outcomes) else 1
@@ -215,6 +218,33 @@ def _start_if_wanted(layout: Layout, pins: Pins) -> None:
     raise SystemExit("The model server is not running; start it first: satyrn start")
 
 
+def start_warmup(layout: Layout, pins: Pins, harness: str, model: str, folder: Path) -> None:
+    """Let the coding agent send its whole context once, in the background, while the user types.
+
+    Ollama then has the context in its cache (and the model in memory) when the first real request
+    arrives, so only the request itself is read. It is a separate session: the user's
+    conversation sees nothing of it. Output goes to .runtime/warmup.log.
+    """
+    if harness == "pi":
+        piagent.write_config(layout, pins)
+        args = ["--print", "--no-session", "--model", piagent.model_ref(model), bench.WARMUP_PROMPT]
+        cmd, env, cwd = piagent.command(layout, args), piagent.env(layout, pins), folder
+    else:
+        agentconfig.write_catalog(layout, pins)
+        cmd = [str(layout.interpreter_exe()), "exec", "--oss", "-m", model, "--skip-git-repo-check", "--ephemeral"]
+        cmd, env, cwd = [*cmd, "-C", str(folder), bench.WARMUP_PROMPT], interpreter_env(layout, pins), None
+    with (layout.runtime / "warmup.log").open("w", encoding="utf-8") as log:
+        subprocess.Popen(
+            cmd,
+            env=env,
+            cwd=cwd,
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=not IS_WINDOWS,
+        )
+
+
 def cmd_code(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     """Open Interpreter on the local model in a folder: a conversation, or one request (-p)."""
     folder = Path(args.dir).expanduser().resolve()
@@ -225,7 +255,10 @@ def cmd_code(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
         raise SystemExit(f"{model} is not downloaded yet: satyrn pull {model}  (or run `satyrn` to be guided)")
     _start_if_wanted(layout, pins)
     folder.mkdir(parents=True, exist_ok=True)
-    if (args.harness or settings.default_harness(layout)) == "pi":
+    harness = args.harness or settings.default_harness(layout)
+    if not args.prompt and not args.no_warmup:
+        start_warmup(layout, pins, harness, model, folder)
+    if harness == "pi":
         prompt = ["--print", args.prompt] if args.prompt else []
         return run_pi(layout, pins, ["--model", piagent.model_ref(model), *prompt], cwd=folder)
     agentconfig.write_catalog(layout, pins)
@@ -278,6 +311,9 @@ def build_parser() -> argparse.ArgumentParser:
     co.add_argument("dir", nargs="?", default=".", help="folder to work in (default: the current one)")
     co.add_argument("-p", "--prompt", help="one request; the model works on it until done, then exits")
     co.add_argument("-m", "--model", help="a listed model (name or number) instead of your default")
+    co.add_argument(
+        "--no-warmup", action="store_true", help="do not let the model read its context before the first request"
+    )
     agent = co.add_mutually_exclusive_group()
     agent.add_argument("--pi", dest="harness", action="store_const", const="pi", help="use pi this time")
     agent.add_argument(
@@ -309,6 +345,7 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("models", nargs="*", help="models to benchmark")
     b.add_argument("--runs", type=int, default=1, help="runs per model (default 1)")
     b.add_argument("--warm", action="store_true", help="keep the model loaded between runs (prompt cache reused)")
+    b.add_argument("--warmup", action="store_true", help="let the agent read its context first; time only the task")
     b.add_argument(
         "--instructions", type=Path, help="try another system prompt instead of config/context/open-interpreter.md"
     )
@@ -317,6 +354,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     b.add_argument("--label", help="name of this variant in the results")
     for task in (c, b):
+        task.add_argument("--harness", choices=settings.HARNESSES, help="coding agent (default: yours)")
         task.add_argument("--effort", help="reasoning effort for models that have one (e.g. low)")
         task.add_argument(
             "--timeout",

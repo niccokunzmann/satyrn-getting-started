@@ -100,6 +100,7 @@ def run_limited(
     on_line: Callable[[str], None] = lambda _line: None,
     limit: float | None = TIME_LIMIT,
     grace: float = GRACE,
+    cwd: Path | None = None,
 ) -> int | None:
     """Run ``cmd`` with output in files, passing each new stdout line to ``on_line``.
 
@@ -109,7 +110,7 @@ def run_limited(
     """
     with stdout.open("w", encoding="utf-8") as out, stderr.open("w", encoding="utf-8") as err:
         proc = subprocess.Popen(
-            cmd, env=env, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=not IS_WINDOWS
+            cmd, env=env, cwd=cwd, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=not IS_WINDOWS
         )
     deadline = None if limit is None else time.monotonic() + limit
     seen: set[int] = set()  # every descendant observed while the run was going

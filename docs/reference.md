@@ -10,12 +10,12 @@ Without the installed command, write `python3.14 satyrn.py COMMAND` in the proje
 | *(none)* | Show what is ready and offer each missing step: tools, model, server. |
 | `install` | Install the `satyrn` command (linked to this folder) and tab completion for your shell. Run as `python3.14 satyrn.py install`. |
 | `uninstall` | Remove the command and the tab completion. The folder stays. |
-| `code [DIR] [-p REQUEST] [-m MODEL] [--pi \| --open-interpreter]` | Work with the model in `DIR` (default: the current folder): a conversation, or one request with `-p`. `MODEL` is a listed model, by name or number; `--pi` or `--open-interpreter` overrides your default coding agent once. |
+| `code [DIR] [-p REQUEST] [-m MODEL] [--pi \| --open-interpreter]` | Work with the model in `DIR` (default: the current folder): a conversation, or one request with `-p`. `MODEL` is a listed model, by name or number; `--pi` or `--open-interpreter` overrides your default coding agent once. A conversation starts with a background warm-up ([Speed](speed.md)); `--no-warmup` turns it off. |
 | `models` | Rate every prepared model for this computer, with benchmark results. |
 | `use MODEL` | Make a listed model your default, by name or by its number in `satyrn models`. |
 | `setup [--harness NAME] [--model M] [--no-model]` | Download and verify Ollama, Open Interpreter, Node.js and pi, write their settings, download the default model (or `M`). `--harness pi` or `--harness open-interpreter` sets the default coding agent. |
 | `pull MODEL` | Download a model; asks first if the available build differs from `pins.toml`. |
-| `start` / `stop` | Start the Ollama server in the background / stop it. |
+| `start` / `stop` | Start the Ollama server in the background and load your default model / stop it. |
 | `serve` | Run the server in the foreground; {kbd}`Ctrl+C` stops it. |
 | `status` | Show the server, the installed models and the loaded ones. |
 | `check [--harness NAME] [--model M] [--effort E] [--timeout S]` | The model writes `sqrt.py`; the program is then run and its output checked. |

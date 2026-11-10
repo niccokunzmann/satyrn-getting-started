@@ -17,7 +17,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from . import agentconfig, ollama, procs
+from . import agentconfig, ollama, piagent, procs
 from .layout import Layout, Pins
 
 SQRT_PROMPT = (
@@ -25,6 +25,8 @@ SQRT_PROMPT = (
     "first command-line argument and prints the square root of it. Only create the file."
 )
 SQRT_CASES = (("16", 4.0), ("2", math.sqrt(2)), ("0.25", 0.5))
+WARMUP_PROMPT = "Reply with OK."  # makes the agent send its whole context once, with little to write
+PI_TOOL_KINDS = {"bash": "command_execution", "write": "file_change", "edit": "file_change"}
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,8 @@ class Variant:
     instructions: Path | None = None  # another system prompt instead of config/context/open-interpreter.md
     overrides: tuple[str, ...] = ()  # interpreter config overrides, KEY=VALUE (TOML value)
     warm: bool = False  # keep the model loaded between runs (Ollama reuses its prompt cache)
+    harness: str = "open-interpreter"  # the coding agent: "open-interpreter" or "pi"
+    warmup: bool = False  # let the agent answer WARMUP_PROMPT first, in the same folder; time only the task
 
 
 @dataclass
@@ -49,6 +53,8 @@ class Outcome:
     effort: str | None = None
     variant: str = "default"
     warm: bool = False
+    harness: str = "open-interpreter"
+    warmup_seconds: float | None = None
     load_seconds: float | None = None
     digest: str | None = None
     usage: dict[str, int] = field(default_factory=dict)  # summed over all model turns
@@ -110,34 +116,40 @@ def run_sqrt(
     agentconfig.write_catalog(layout, pins)
     work = layout.runtime / "checks" / f"{time.strftime('%Y%m%d-%H%M%S')}-{model.replace(':', '_')}"
     work.mkdir(parents=True)
-    cmd = [str(layout.interpreter_exe()), "exec", "--json", "--oss", "-m", model, "--skip-git-repo-check"]
-    cmd += ["-s", "workspace-write", "-C", str(work)]
-    if variant.effort:
-        cmd += ["-c", f'model_reasoning_effort="{variant.effort}"']
-    if variant.instructions:
-        catalog = agentconfig.write_catalog(
-            layout, pins, variant.instructions, layout.bench / f"catalog-{variant.instructions.stem}.json"
-        )
-        cmd += ["-c", f"model_catalog_json={json.dumps(str(catalog))}"]
-    for override in variant.overrides:
-        cmd += ["-c", override]
-    cmd.append(SQRT_PROMPT)
     outcome = Outcome(model=model, passed=False, detail="", seconds=0.0, exit_code=None, workdir=str(work))
     outcome.effort, outcome.variant, outcome.warm = variant.effort, variant.label, variant.warm
+    outcome.harness = variant.harness
+    if variant.warmup:
+        began = time.monotonic()
+        print(f"warming up {variant.harness} with {model} in {work} ...", flush=True)
+        cmd, env, cwd = agent_command(layout, pins, model, variant, work, WARMUP_PROMPT)
+        procs.run_limited(
+            cmd,
+            env=env,
+            cwd=cwd,
+            stdout=work.parent / f"{work.name}.warmup.jsonl",
+            stderr=work.parent / f"{work.name}.warmup.stderr.log",
+            limit=timeout,
+        )
+        outcome.warmup_seconds = round(time.monotonic() - began, 1)
+        print(f"  warm-up took {outcome.warmup_seconds:.0f}s", flush=True)
     log_start = layout.logfile.stat().st_size if layout.logfile.is_file() else None
     usage: Counter[str] = Counter()
     items: Counter[str] = Counter()
     started = time.monotonic()
-    print(f"asking {model} via `interpreter exec --oss` in {work} ...", flush=True)
+    print(f"asking {model} via {variant.harness} in {work} ...", flush=True)
     events = work.parent / f"{work.name}.events.jsonl"
     stderr_log = work.parent / f"{work.name}.stderr.log"
 
+    record = _record_pi if variant.harness == "pi" else _record
+
     def on_line(line: str) -> None:
         with contextlib.suppress(json.JSONDecodeError):
-            _record(json.loads(line), outcome, usage, items, started)
+            record(json.loads(line), outcome, usage, items, started)
 
+    cmd, env, cwd = agent_command(layout, pins, model, variant, work, SQRT_PROMPT)
     exit_code = procs.run_limited(
-        cmd, env=interpreter_env(layout, pins), stdout=events, stderr=stderr_log, on_line=on_line, limit=timeout
+        cmd, env=env, cwd=cwd, stdout=events, stderr=stderr_log, on_line=on_line, limit=timeout
     )
     outcome.seconds = round(time.monotonic() - started, 1)
     outcome.exit_code = exit_code
@@ -159,6 +171,55 @@ def run_sqrt(
         print(f"  time limit reached: unloading {model} so the server stops working on it", flush=True)
         ollama.unload(pins, model)
     return outcome
+
+
+def agent_command(
+    layout: Layout, pins: Pins, model: str, variant: Variant, work: Path, prompt: str
+) -> tuple[list[str], dict[str, str], Path | None]:
+    """Command line, environment and working folder for one request to the chosen coding agent."""
+    if variant.harness == "pi":
+        piagent.write_config(layout, pins)
+        args = ["--mode", "json", "--model", piagent.model_ref(model), "--no-session"]
+        if variant.instructions:
+            args += ["--system-prompt", variant.instructions.read_text(encoding="utf-8")]
+        return piagent.command(layout, [*args, prompt]), piagent.env(layout, pins), work
+    agentconfig.write_catalog(layout, pins)
+    cmd = [str(layout.interpreter_exe()), "exec", "--json", "--oss", "-m", model, "--skip-git-repo-check"]
+    cmd += ["-s", "workspace-write", "-C", str(work)]
+    if variant.effort:
+        cmd += ["-c", f'model_reasoning_effort="{variant.effort}"']
+    if variant.instructions:
+        catalog = agentconfig.write_catalog(
+            layout, pins, variant.instructions, layout.bench / f"catalog-{variant.instructions.stem}.json"
+        )
+        cmd += ["-c", f"model_catalog_json={json.dumps(str(catalog))}"]
+    for override in variant.overrides:
+        cmd += ["-c", override]
+    return [*cmd, prompt], interpreter_env(layout, pins), None
+
+
+def _record_pi(event: dict, outcome: Outcome, usage: Counter, items: Counter, started: float) -> None:
+    """pi's JSON events: tool calls and the model's messages."""
+    kind = event.get("type", "")
+    when = f"  [{time.monotonic() - started:5.0f}s]"
+    if kind == "tool_execution_end":
+        name = str(event.get("toolName", "?"))
+        items[PI_TOOL_KINDS.get(name, name)] += 1
+        if event.get("isError"):
+            outcome.failed_items += 1
+        print(f"{when} {name} ({'error' if event.get('isError') else 'ok'})", flush=True)
+    elif kind == "message_end":
+        message = event.get("message") or {}
+        for key, value in (message.get("usage") or {}).items():
+            if isinstance(value, int):
+                usage[key] += value
+        if message.get("role") == "assistant":
+            parts = message.get("content") or []
+            text = " ".join(p.get("text", "") for p in parts if isinstance(p, dict) and p.get("type") == "text")
+            if text.strip():
+                print(f"{when} answer: {' '.join(text.split())[:110]}", flush=True)
+    elif kind in {"error", "agent_error"}:
+        outcome.errors.append(str(event)[:300])
 
 
 def _record(event: dict, outcome: Outcome, usage: Counter, items: Counter, started: float) -> None:
@@ -264,7 +325,8 @@ def table(outcomes: list[Outcome]) -> str:
     ]
     for o in outcomes:
         result = "pass" if o.passed else ("timeout" if o.exit_code is None else "fail")
-        variant = o.variant + (", warm" if o.warm else "") + (f", effort {o.effort}" if o.effort else "")
+        variant = f"{o.harness}, {o.variant}" + (", warm" if o.warm else "") + (", warm-up" if o.warmup_seconds else "")
+        variant += f", effort {o.effort}" if o.effort else ""
         first = o.requests[0] if o.requests else None
         context = f"{first['read_s']:.0f} / {first['read_tokens']:.0f}" if first else "-"
         read = sum(r["read_s"] for r in o.requests)
