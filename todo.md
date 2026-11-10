@@ -24,9 +24,10 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       `pull MODEL`, `interpreter --oss -m MODEL`, `check --model MODEL`
 - [x] Use Ollama and make one model work agentically. → `gpt-oss:20b` wrote the file via the shell tool,
       then checked it with `ls`/`sed` on its own
-- [ ] `interpreter --oss` must work with that Ollama model.
+- [x] `interpreter --oss` must work with that Ollama model.
   - [x] `interpreter exec --oss` (non-interactive) works end to end.
-  - [ ] Try the interactive TUI: `source .runtime/activate && interpreter --oss` (needs a terminal).
+  - [x] Try the interactive TUI: `source .runtime/activate && interpreter --oss` (needs a terminal).
+        → tested in a pseudo-terminal via `satyrn code`: header shows `model: ollama gpt-oss:20b`
 - [x] Prefer Open Interpreter over a self-developed shell. → Path A is primary
 - [x] Play a sound when all work is done, in every session. → existing user-level `Stop`
       hook verified (`paplay complete.oga`)
@@ -101,6 +102,8 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [x] Fix found on the way: unloading a 17 GB model made Ollama answer `/api/ps` after 6 s,
         past the 5 s client timeout, which crashed the next `bench`. `unload` now waits until
         the model is gone, with longer timeouts.
+- [x] "Are you done?" → not yet at that point: the last benchmark (gpt-oss low effort) and the README
+      results were still open; finished right after.
 
 - [x] Publish the project as a Sphinx site on GitHub Pages under `github.com/niccokunzmann/`:
       people follow a few setup steps that have defaults, then generate code with local models.
@@ -112,6 +115,8 @@ Every request is recorded here as a todo, in the order it was given. The goals b
         → https://github.com/niccokunzmann/satyrn-getting-started (public), Pages from Actions:
         https://niccokunzmann.github.io/satyrn-getting-started/ (all pages 200; a fresh clone works on its own)
   - [x] Choose a license. → MIT (`LICENSE`, like the satyrn-ai repos), declared in pyproject.toml
+  - [x] Location: `github.com/niccokunzmann/` → `niccokunzmann/satyrn-getting-started`
+  - [x] "gh command is authenticated" → repository created (public), Pages set to GitHub Actions, pushed
 
 - [x] License: MIT. → `LICENSE`, pyproject.toml, README, docs footer
 - [x] Use the REUSE project (reuse.software): every file has its license and copyright; `reuse lint` passes.
@@ -122,9 +127,10 @@ Every request is recorded here as a todo, in the order it was given. The goals b
 - [x] Install the latest ai-prompt-auto-commit. → v0.1.0 (icalendar is on v0.0.10); git hooks
       installed, `prepare-ai-repository` ran (.claude/, .codex/, AGENTS.md, assistant guidelines)
 - [x] Make the README mostly empty and point to the docs. → the Satyrn projects table moved to docs/projects.md
+- [x] Create a commit and publish the project so I can view it. → pushed; Pages deploy checked live
 
-- [ ] Find instructions that make the models solve tasks faster; check with the fastest model
-      (gpt-oss:20b) whether code execution gets faster.
+- [x] Find instructions that make the models solve tasks faster; check with the fastest model
+      (gpt-oss:20b) whether code execution gets faster. → results below; the default is a decision for the user
   - [x] Measured (gpt-oss:20b, 3 runs each): current context 2:33 cold / 1:00 warm; lean context
         (0.8 KB prompt, no environment block, no sandbox note) 1:48 cold / 1:07 warm. Context read:
         1,675 tokens in 88 s vs 870 in 39 s; warm 21 s vs 6 s. Writing dominates warm runs (~45 s).
@@ -150,6 +156,8 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [ ] Test the zsh, fish and PowerShell completion on machines that have those shells.
   - [x] Docs first: quick start, Set up (install, guide, steps by hand, completion, uninstall),
         Generate code (`satyrn code`), Choose a model (`satyrn models`, `use`, context reading times), Reference.
+- [x] For now, always commit and push when done; the user reviews the docs. Docs-first project from now on.
+      → docs are written and pushed before the code; saved as a project memory
 
 - [x] `satyrn-codegen --help` failed with `No module named 'ds4py'`: what is this? → `satyrn install`
       also installs the package's second command, `satyrn-codegen` (Apple Silicon engine), whose
@@ -168,6 +176,22 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       silenced with `suppress_unstable_features_warning`.
 - [x] `satyrn code` can only use a model that is listed. → `code -m` and `use` accept only listed
       models, by name or number; anything else gets the list and the docs link, nothing is changed
+
+- [x] Clone Open Interpreter and draft a PR that removes the Codex wording and lets the shown name be
+      configured (so it can say Satyrn). → patch on the local branch `product-name-override` in
+      `../openinterpreter` (product-info: `OPEN_INTERPRETER_PRODUCT_NAME` at runtime; trust prompt and
+      placeholder use the product name; FORK_BRANDING.md). Upstream asks for an issue first; per the
+      user, nothing was published (the fork `niccokunzmann/openinterpreter` exists, unchanged).
+  - [x] "It also says 'Ask codex to do anything' in the prompt" → replaced in the same patch.
+  - [x] Do not publish anything to them; give the issue text and the link. → handed over in the chat.
+- [x] Never publish an issue, PR or anything without the user's consent. → saved as a memory for all sessions
+- [x] Are there example files and prompts to test the speed of the models? Something online for really
+      simple benchmarks? → answered: LocalScore, llama-bench, Ollama `--verbose`, HumanEval/MBPP
+      (benchllama), Aider Polyglot; `satyrn bench` for the agent task
+- [x] What is the simplest and fastest benchmark the model could run, like hello world? → answered:
+      hello.py (one tool call); its floor is the context reading, so barely faster than sqrt.py
+  - [ ] Optional: add small tasks (hello, sqrt, fizzbuzz) to `satyrn bench` if the user wants them.
+- [x] Still record all prompts as todos for this project and check them off. → this list, in order
 
 ## Follow-ups found along the way
 
