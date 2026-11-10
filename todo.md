@@ -207,6 +207,14 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       was building into the same folder at that moment, so the open page did not reload. livehtml now has
       its own output folder. The user's uv tab is committed.
 
+- [x] By default no error when a model differs from its pin, but a question whether to use the different
+      build, and instructions how to avoid it; future users must still be able to use the project. Does
+      the earlier suggestion cover this? → No: it failed after downloading, and its only advice was to edit
+      pins.toml. Now satyrn asks the Ollama registry before downloading, explains, asks (default yes; no
+      terminal: warning), remembers a yes in .runtime/settings.toml, and shows three ways to avoid the
+      question. Tool archives stay strict. `verify` fails only for builds that were not accepted.
+      (Found on the way: the manifest file on disk does not hash to the digest; that helper was removed.)
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`

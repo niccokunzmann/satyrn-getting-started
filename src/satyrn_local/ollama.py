@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import json
 import os
 import re
@@ -222,3 +223,25 @@ def request_timings(log_text: str) -> list[dict[str, float]]:
         elif (match := _GENERATE_TIMING.search(line)) and requests:
             requests[-1].update(write_tokens=int(match[3]), write_s=float(match[2]) / 1000)
     return requests
+
+
+REGISTRY = "https://registry.ollama.ai/v2"
+
+
+def remote_digest(model: str) -> str | None:
+    """The build the tag points to in the Ollama registry now (what a pull would download).
+
+    Its digest is the SHA-256 of the manifest the registry sends. None when the registry
+    cannot be asked (offline, for example); the digest is then checked after the pull.
+    """
+    name, _, tag = model.partition(":")
+    namespace, _, short = name.rpartition("/")
+    request = urllib.request.Request(  # noqa: S310 - fixed https registry URL
+        f"{REGISTRY}/{namespace or 'library'}/{short}/manifests/{tag or 'latest'}",
+        headers={"Accept": "application/vnd.docker.distribution.manifest.v2+json", "User-Agent": "satyrn"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - fixed https registry
+            return hashlib.sha256(response.read()).hexdigest()
+    except urllib.error.URLError, OSError:
+        return None

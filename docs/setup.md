@@ -171,7 +171,7 @@ The model is very slow or the computer swaps
 : The model needs more memory than is free. `satyrn models` shows what fits; close other
   programs or choose a smaller model.
 
-`... resolved to ..., but pins.toml pins ...`
-: The model tag was changed upstream since this project pinned it. This stops the download on
-  purpose, so you never get a different model without noticing. Update the digest in
-  `pins.toml` if you want the new version.
+`... has changed since this project tested and pinned it`
+: The model's publisher has released a newer build under the same name. Answer yes to use it;
+  see [When a model has changed](reproducibility.md#when-a-model-has-changed) for how to avoid
+  the question.

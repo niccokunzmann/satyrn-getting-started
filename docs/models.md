@@ -48,7 +48,7 @@ column also marks models you have downloaded and your default.
 The end of the list says how, with the recommended model as the example:
 
 ```bash
-satyrn pull qwen3.6:35b-a3b    # download it; its digest is checked against pins.toml
+satyrn pull qwen3.6:35b-a3b    # download it; asks first if it differs from pins.toml
 satyrn use qwen3.6:35b-a3b     # make it your default for `satyrn code` and `satyrn check`
 satyrn use 2                   # the same, by its number in `satyrn models`
 satyrn code ~/ai-code -m qwen3-coder:30b   # or use another model just once

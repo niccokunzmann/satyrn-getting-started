@@ -49,7 +49,7 @@ def _line(name: str, text: str, *, done: bool) -> str:
     return f"  [{'x' if done else ' '}] {name:<8} {text}"
 
 
-def run(layout: Layout, pins: Pins, *, interactive: bool, setup: Step, pull: Callable[[str], object]) -> int:
+def run(layout: Layout, pins: Pins, *, interactive: bool, setup: Step, pull: Callable[[str], bool]) -> int:
     model = settings.default_model(layout, pins)
     tools = tools_ready(layout, pins)
     pulled = settings.is_pulled(layout, model)
@@ -95,8 +95,9 @@ def run(layout: Layout, pins: Pins, *, interactive: bool, setup: Step, pull: Cal
         if choice is None:
             print("Later: satyrn models, then satyrn pull MODEL")
             return 0
-        if not settings.is_pulled(layout, choice):
-            pull(choice)
+        if not settings.is_pulled(layout, choice) and not pull(choice):
+            print("Later: satyrn models, then satyrn pull MODEL")
+            return 0
         settings.set_default_model(layout, choice)
         model = choice
         print(f"\n{model} is your default model (change it with `satyrn use MODEL`).\n")

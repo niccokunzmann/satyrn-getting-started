@@ -14,13 +14,13 @@ Without the installed command, write `python3.14 satyrn.py COMMAND` in the proje
 | `models` | Rate every prepared model for this computer, with benchmark results. |
 | `use MODEL` | Make a listed model your default, by name or by its number in `satyrn models`. |
 | `setup [--model M] [--no-model]` | Download, verify and unpack Ollama and Open Interpreter, write their settings, download the default model (or `M`). |
-| `pull MODEL` | Download a model and compare its digest with `pins.toml`. |
+| `pull MODEL` | Download a model; asks first if the available build differs from `pins.toml`. |
 | `start` / `stop` | Start the Ollama server in the background / stop it. |
 | `serve` | Run the server in the foreground; {kbd}`Ctrl+C` stops it. |
 | `status` | Show the server, the installed models and the loaded ones. |
 | `check [--model M] [--effort E] [--timeout S]` | The model writes `sqrt.py`; the program is then run and its output checked. |
 | `bench [MODEL…] [--runs N] [--warm] [--instructions FILE] [--set KEY=VALUE] [--effort E] [--timeout S]` | Time models on the same task; default: every model in `config/models.toml`, one run each. |
-| `verify` | Re-check every pinned archive, unpacked tool and downloaded model. |
+| `verify` | Re-check every pinned archive, unpacked tool and downloaded model (accepted model versions pass). |
 | `interpreter ARGS…` | Run the project's Open Interpreter with the project's settings; all arguments are passed on. |
 | `ollama ARGS…` | Run the project's Ollama command line, for example `satyrn ollama list`. |
 | `completion SHELL` | Print the tab-completion script for `bash`, `zsh`, `fish` or `powershell`. |

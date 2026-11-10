@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import tomllib
 from pathlib import Path
@@ -17,10 +16,14 @@ def load(layout: Layout) -> dict:
         return {}
 
 
-def save(layout: Layout, values: dict[str, str]) -> None:
+def save(layout: Layout, values: dict) -> None:
+    """Write top-level values, then tables (a dict value becomes a [table] of strings)."""
     layout.runtime.mkdir(parents=True, exist_ok=True)
     lines = ["# Written by `satyrn`; your choices. Delete this file to return to the defaults.\n"]
-    lines += [f"{key} = {json.dumps(value)}\n" for key, value in sorted(values.items())]
+    lines += [f"{key} = {json.dumps(value)}\n" for key, value in sorted(values.items()) if not isinstance(value, dict)]
+    for name, table in sorted((key, value) for key, value in values.items() if isinstance(value, dict)):
+        lines.append(f"\n[{name}]\n")
+        lines += [f"{json.dumps(key)} = {json.dumps(value)}\n" for key, value in sorted(table.items())]
     layout.settings.write_text("".join(lines), encoding="utf-8")
 
 
@@ -41,10 +44,16 @@ def manifest(layout: Layout, model: str) -> Path:
 
 
 def is_pulled(layout: Layout, model: str) -> bool:
-    """Downloaded? Works without a running server (the digest is the manifest's SHA-256)."""
+    """Downloaded? Works without a running server."""
     return manifest(layout, model).is_file()
 
 
-def local_digest(layout: Layout, model: str) -> str | None:
-    path = manifest(layout, model)
-    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+def accepted_digest(layout: Layout, model: str) -> str | None:
+    """The build of ``model`` the user accepted although it differs from pins.toml."""
+    return load(layout).get("accepted_digests", {}).get(model)
+
+
+def accept_digest(layout: Layout, model: str, digest: str) -> None:
+    values = load(layout)
+    values["accepted_digests"] = values.get("accepted_digests", {}) | {model: digest}
+    save(layout, values)

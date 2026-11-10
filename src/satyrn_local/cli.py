@@ -13,7 +13,20 @@ import tomllib
 from collections.abc import Callable
 from pathlib import Path
 
-from . import agentconfig, bench, completion, fetch, guide, install, machine, modelinfo, ollama, procs, settings
+from . import (
+    agentconfig,
+    bench,
+    completion,
+    fetch,
+    guide,
+    install,
+    machine,
+    modelinfo,
+    modelpins,
+    ollama,
+    procs,
+    settings,
+)
 from .bench import interpreter_env
 from .layout import IS_WINDOWS, Layout, Pins, platform_key
 
@@ -71,15 +84,9 @@ def write_launchers(layout: Layout) -> None:
 
 
 # --- commands ----------------------------------------------------------------------------
-def check_model_digest(pins: Pins, model: str, digest: str) -> None:
-    print(f"  model    {model} digest {digest}")
-    pinned = pins.digest(model)
-    if pinned is None:
-        print(f'  note     not pinned; to pin it add  "{model}" = "{digest}"  to [model.digests] in pins.toml')
-    elif digest != pinned:
-        raise SystemExit(f"{model} resolved to {digest}, but pins.toml pins {pinned} (upstream tag changed)")
-    else:
-        print("  verified model digest matches pins.toml")
+def interactive() -> bool:
+    """Questions are asked only in a terminal; elsewhere the default answer applies."""
+    return sys.stdin.isatty() and sys.stdout.isatty()
 
 
 def cmd_setup(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
@@ -97,8 +104,8 @@ def cmd_setup(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     if not args.no_model:
         model = args.model or settings.default_model(layout, pins)
         print(f"model {model}:")
-        with ollama.running(layout, pins):
-            check_model_digest(pins, model, ollama.pull(layout, pins, model))
+        if not modelpins.pull(layout, pins, model, ask=interactive()):
+            print("  setup continues without a model; choose one later: satyrn models")
     print("\nsetup complete. Next: satyrn (shows what is still missing)")
     return 0
 
@@ -121,11 +128,12 @@ def cmd_verify(layout: Layout, pins: Pins, _args: argparse.Namespace) -> int:
         if digest is None:
             print(f"model        {model} not pulled" + (" (the default!)" if model == pins.model else ""))
             failures += model == pins.model  # other pinned models are optional
-            continue
-        try:
-            check_model_digest(pins, model, digest)
-        except SystemExit as error:
-            print(f"model        {error}")
+        elif digest == pins.digest(model):
+            print(f"model        {model} is the build pinned in pins.toml")
+        elif digest == settings.accepted_digest(layout, model):
+            print(f"model        {model} differs from pins.toml; you accepted this build")
+        else:
+            print(f"model        {model} differs from pins.toml ({digest}); see {modelpins.DOCS}")
             failures += 1
     print("all pinned inputs verified" if not failures else f"{failures} problem(s); run: satyrn setup")
     return 1 if failures else 0
@@ -145,9 +153,7 @@ def cmd_status(layout: Layout, pins: Pins, _args: argparse.Namespace) -> int:
 
 
 def cmd_pull(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
-    with ollama.running(layout, pins):
-        check_model_digest(pins, args.model, ollama.pull(layout, pins, args.model))
-    return 0
+    return 0 if modelpins.pull(layout, pins, args.model, ask=interactive()) else 1
 
 
 def cmd_check(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
@@ -231,15 +237,13 @@ def cmd_use(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
 
 
 def cmd_guide(layout: Layout, pins: Pins, _args: argparse.Namespace) -> int:
-    interactive = sys.stdin.isatty() and sys.stdout.isatty()
-
     def setup() -> int:
         return cmd_setup(layout, pins, argparse.Namespace(model=None, no_model=True))
 
-    def pull(model: str) -> int:
-        return cmd_pull(layout, pins, argparse.Namespace(model=model))
+    def pull(model: str) -> bool:
+        return modelpins.pull(layout, pins, model, ask=True)
 
-    return guide.run(layout, pins, interactive=interactive, setup=setup, pull=pull)
+    return guide.run(layout, pins, interactive=interactive(), setup=setup, pull=pull)
 
 
 # --- entry point ---------------------------------------------------------------------------
