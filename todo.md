@@ -111,7 +111,7 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [x] Create the GitHub repository and push (needs the user's GitHub login).
         → https://github.com/niccokunzmann/satyrn-getting-started (public), Pages from Actions:
         https://niccokunzmann.github.io/satyrn-getting-started/ (all pages 200; a fresh clone works on its own)
-  - [ ] Choose a license (none yet, so others may not reuse the code; the satyrn-ai repos use MIT).
+  - [x] Choose a license. → MIT (`LICENSE`, like the satyrn-ai repos), declared in pyproject.toml
 
 ## Follow-ups found along the way
 

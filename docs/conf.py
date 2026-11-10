@@ -1,8 +1,8 @@
 """Sphinx configuration of the documentation site (published on GitHub Pages)."""
 
 project = "Local code generation"
-author = "satyrn-getting-started contributors"
-project_copyright = f"2026, {author}"
+author = "Nicco Kunzmann"
+project_copyright = f"2026, {author}. MIT License"
 
 REPOSITORY = "https://github.com/niccokunzmann/satyrn-getting-started"
 

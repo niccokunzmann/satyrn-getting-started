@@ -67,3 +67,7 @@ make docs        # the documentation site, into build/docs
 
 See [Contributing](https://niccokunzmann.github.io/satyrn-getting-started/contributing.html).
 `plan.md` holds the goals, `todo.md` every request and its state.
+
+## License
+
+[MIT](LICENSE)
