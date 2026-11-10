@@ -215,6 +215,14 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       question. Tool archives stay strict. `verify` fails only for builds that were not accepted.
       (Found on the way: the manifest file on disk does not hash to the digest; that helper was removed.)
 
+- [x] How can we speed up the time the model needs for a simple solution? Does changing the context file
+      help? → answered from the measurements (gpt-oss:20b): the lean context saves ~50 s on the first task
+      after loading (2:33 → 1:48), little once the model is loaded (1:00 vs 1:07); keeping the model
+      loaded saves the most; then writing (~45 s at 5.3 tokens/s) dominates.
+  - [ ] Decide: make a compact context the default (see above).
+  - [ ] Decide: warm the model up after `satyrn start` (read the fixed context once), so the first task
+        is as fast as later ones.
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`
