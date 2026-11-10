@@ -1,0 +1,24 @@
+# What Open Interpreter should know about each local model.
+#
+# Open Interpreter 0.0.60 has metadata only for OpenAI's hosted models; any other model gets a
+# generic fallback that names tools it does not have. The satyrn.py commands turn this file and
+# config/instructions.md into .runtime/interpreter-home/models.json, which config/interpreter.toml
+# passes to the interpreter as `model_catalog_json`. Edits apply on the next `interpreter`,
+# `check` or `bench` run.
+#
+# To use another model: pull it (`python satyrn.py pull NAME`) and add a [NAME] table here.
+
+[defaults]
+tool_output_tokens = 4000   # command output beyond this is truncated (saves context)
+reasoning_efforts = []      # values for `reasoning.effort`; [] = the model has no such setting
+
+["gpt-oss:20b"]
+reasoning_efforts = ["low", "medium", "high"]
+default_effort = "medium"
+
+["qwen3-coder:30b"]
+
+["qwen3.6:35b-a3b"]
+
+["qwen3.8:27b"]
+description = "The base model of Satyrn's own engine (Path B), as Ollama's library build"

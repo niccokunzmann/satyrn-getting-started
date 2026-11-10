@@ -1,0 +1,40 @@
+# Pinned inputs for a reproducible local-model setup (`python satyrn.py setup`).
+# Every download is checked against its sha256 before it is unpacked.
+# Change a version only together with all of its checksums.
+
+[model]
+default = "gpt-oss:20b"   # what `interpreter --oss` uses
+# Context window the Ollama server offers to clients (tokens).
+context_length = 32768
+
+# Manifest digest each tag must resolve to; `setup`, `pull` and `verify` fail if upstream changes
+# one. The default model is required; the others are pulled only for comparisons (`bench`).
+[model.digests]
+"gpt-oss:20b" = "f38aa0c53da5f8c49d08c43a99df24ff53167fe68e24664a7777288e7656fdfe"
+"qwen3-coder:30b" = "06c1097efce0431c2045fe7b2e5108366e43bee1b4603a7aded8f21689e90bca"
+"qwen3.6:35b-a3b" = "a7eb95c53bcf96b4bdd008d0fab4a5dac88047d9c1a7a9ab88ed453423fbd87c"
+"qwen3.8:27b" = "aaee06c39dcf2437cde036998d960e1fc1494b8191be7cc9657d01e509097813"   # Satyrn's base model
+
+[ollama]
+version = "0.40.15"
+port = 11434
+base_url = "https://github.com/ollama/ollama/releases/download/v0.40.15"
+
+[ollama.assets]
+linux-x86_64   = { file = "ollama-linux-amd64.tar.zst", sha256 = "628c018404a4206493efd38e46251c154ede5141b8b8dc85c659b3b027c47379" }
+linux-aarch64  = { file = "ollama-linux-arm64.tar.zst", sha256 = "7f699ead5cdb4ae1ed89b888b148a238af188708800871e1889ab9dcee95f247" }
+windows-x86_64 = { file = "ollama-windows-amd64.zip",   sha256 = "9ca74a7ab66ec86870b1eecac7df160df08dc4e3a291ab5d2d59bcf9310221c6" }
+macos-arm64    = { file = "ollama-darwin.tgz",          sha256 = "607c79d5d6315ef9d896db83adde736a4c0057196329843544e79b95afb260a8" }
+macos-x86_64   = { file = "ollama-darwin.tgz",          sha256 = "607c79d5d6315ef9d896db83adde736a4c0057196329843544e79b95afb260a8" }
+
+[interpreter]
+version = "0.0.60"
+base_url = "https://github.com/openinterpreter/openinterpreter/releases/download/rust-v0.0.60"
+
+[interpreter.assets]
+linux-x86_64    = { file = "open-interpreter-package-x86_64-unknown-linux-musl.tar.zst",  sha256 = "27f17a820d6e97cf50f8db76f05b899c28b35f9f676758af105ec3274b85223e" }
+linux-aarch64   = { file = "open-interpreter-package-aarch64-unknown-linux-musl.tar.zst", sha256 = "a631aeb99188059a0dd0a18dcc26ed9210dae0d5375172aefa18578ced8f833e" }
+windows-x86_64  = { file = "open-interpreter-package-x86_64-pc-windows-msvc.tar.zst",    sha256 = "28594217411b0dcda6d38225a6742d709c8c586a732bdc002d786d92f02761a0" }
+windows-aarch64 = { file = "open-interpreter-package-aarch64-pc-windows-msvc.tar.zst",   sha256 = "98e8c260d5e28379cf9111ec1233d2ef8e80bb2e5e05c086d17be56722fd0248" }
+macos-arm64     = { file = "open-interpreter-package-aarch64-apple-darwin.tar.zst",      sha256 = "7eec4b6a4c31b7562e6f78b2a32bb1cf3e2720e85b2885babb0c9703eaaa7a5f" }
+macos-x86_64    = { file = "open-interpreter-package-x86_64-apple-darwin.tar.zst",       sha256 = "f813a3c0f9e496fc5b966ed95c5c87a549152762064dc7a7a7904ea20903017b" }

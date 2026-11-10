@@ -1,0 +1,7 @@
+# Build requirements of the documentation site. Pinned with hashes in requirements.txt:
+#   uv pip compile docs/requirements.in --generate-hashes --python-version 3.14 -o docs/requirements.txt
+sphinx
+furo
+myst-parser
+sphinx-copybutton
+sphinx-design

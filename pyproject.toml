@@ -1,0 +1,51 @@
+[build-system]
+build-backend = "uv_build"
+requires = [ "uv-build>=0.12.22,<0.14.0" ]
+
+[project]
+name = "satyrn-codegen"
+version = "0.1.0"
+description = "Natural-language code generation CLI on top of satyrn-agent (ds4 + DFlash)"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+  # Same pin satyrn-agent uses; must stay in lockstep with ../satyrn-agent/pyproject.toml.
+  "ds4py @ git+https://github.com/rochecompaan/ds4-py.git@5c98c6ac86cafef56780c3bcbb87c3ecaef52aef",
+  "satyrn-agent",
+]
+
+[project.scripts]
+satyrn-codegen = "satyrn_codegen.cli:main"
+
+[tool.uv.sources]
+satyrn-agent = { path = "../satyrn-agent", editable = true }
+
+[dependency-groups]
+dev = [ "pytest>=9.1.1", "ruff>=0.17.3" ]
+
+[tool.pytest]
+ini_options.testpaths = [ "tests" ]
+ini_options.markers = [ "live: sends a task through the real local model (needs a running server and pulled model)" ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+src = [ "src", "tests" ]
+
+[tool.ruff.lint]
+select = [
+  "E", "W", "F", "I", "UP", "B", "A", "C4", "SIM", "RET", "PTH", "PIE", "PL",
+  "S", "BLE", "TRY", "ANN", "FBT", "RUF", "N", "ERA", "T20", "DTZ", "LOG", "PERF",
+]
+ignore = [
+  "T201",    # print is the user interface of these CLIs
+  "TRY003",  # messages at raise sites carry the useful context
+  "PLR2004", # small literals (exit codes, ports) read better inline
+  "S603",    # subprocess calls run pinned, verified binaries or the user's approved command
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [ "S101", "S607", "ANN", "FBT", "PLC0415", "INP001" ]
+
+[tool.ruff.lint.pylint]
+max-args = 8

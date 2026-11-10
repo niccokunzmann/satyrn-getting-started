@@ -1,0 +1,13 @@
+{
+  "dflash": "auto",
+  "drafter_path": "/Users/you/models/dflash-Qwen3.8-27B-Q4_0.gguf",
+  "draft_tokens": 0,
+  "sampling": {
+    "temperature": 0.6,
+    "top_p": 0.95
+  },
+  "think_budget": {
+    "max_tokens": 1024,
+    "bias": 2.0
+  }
+}

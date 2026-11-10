@@ -1,0 +1,32 @@
+# Open Interpreter configuration for this project (template).
+# `python satyrn.py setup` writes it to .runtime/interpreter-home/config.toml, which the
+# project's interpreter uses via INTERPRETER_HOME - ~/.openinterpreter is never touched.
+# The two placeholders below are filled in from pins.toml and the generated model catalog.
+
+model = "@MODEL@"
+model_provider = "ollama"   # plain `interpreter` uses the local Ollama too
+oss_provider = "ollama"     # `interpreter --oss` needs no provider picker
+
+# Reproducibility: stay on the version pinned in pins.toml.
+check_for_update_on_startup = false
+
+# How to drive the local models: system prompt (config/instructions.md) and context window for
+# every model in config/models.toml.
+model_catalog_json = @CATALOG@
+
+# Leave out what a local coding model cannot use. Every tool and instruction block is sent with
+# each request and costs prompt time on a CPU.
+web_search = "disabled"
+include_apps_instructions = false
+include_collaboration_mode_instructions = false
+
+[skills]
+include_instructions = false   # the bundled skills (image generation, OpenAI docs, ...) need OpenAI services
+
+[tools.experimental_request_user_input]
+enabled = false                # nobody can answer questions during `interpreter exec`
+
+[features]
+multi_agent = false            # sub-agent tools (10 KB of tool definitions)
+goals = false
+view_image = false             # the models here read text only
