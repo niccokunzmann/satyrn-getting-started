@@ -70,6 +70,18 @@ the model freshly loaded each time, and with `--warmup` the warm-up first:
 
 The warm-up itself took 47–52 s; it runs while you read and type.
 
+The same in a real conversation, measured with `experiments/first_answer.py`: `satyrn code`
+with pi in a terminal, the model not loaded at the start (as after a break), the request sent
+after 30 seconds of reading and typing, and the time from sending it until the model is done:
+
+| | First answer | Result |
+| --- | ---: | --- |
+| `satyrn code` (with warm-up) | 36.5 s | `hello.py` prints `Hello, World!` |
+| `satyrn code --no-warmup` | 65.9 s | `hello.py` prints `Hello, World!` |
+
+Without the warm-up, that first request had to load the model and read 947 tokens of context
+first; with it, both had happened while the request was being typed.
+
 ## 3. The size of the context per coding agent
 
 The first request of each agent, with satyrn's contexts (same task as above, without warm-up):
