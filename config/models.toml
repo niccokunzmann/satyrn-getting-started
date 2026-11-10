@@ -2,7 +2,7 @@
 #
 # Open Interpreter 0.0.60 has metadata only for OpenAI's hosted models; any other model gets a
 # generic fallback that names tools it does not have. The satyrn.py commands turn this file and
-# config/instructions.md into .runtime/interpreter-home/models.json, which config/interpreter.toml
+# config/context/open-interpreter.md into .runtime/interpreter-home/models.json, which config/interpreter.toml
 # passes to the interpreter as `model_catalog_json`. Edits apply on the next `interpreter`,
 # `check` or `bench` run.
 #

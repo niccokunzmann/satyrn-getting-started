@@ -14,7 +14,7 @@ check_for_update_on_startup = false
 # (default_mode_request_user_input) and warns about it; its tool is off below anyway.
 suppress_unstable_features_warning = true
 
-# How to drive the local models: system prompt (config/instructions.md) and context window for
+# How to drive the local models: system prompt (config/context/open-interpreter.md) and context window for
 # every model in config/models.toml.
 model_catalog_json = @CATALOG@
 

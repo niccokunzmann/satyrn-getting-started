@@ -240,15 +240,25 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       checks; only the harness changes; measured with `satyrn bench` (answered in the chat)
   - [ ] If the user agrees: `satyrn bench --harness pi` and a pinned pi install for the comparison.
 
-- [ ] pi as a second harness: `satyrn setup` installs pi too and lets the user choose the default (pi is the
+- [x] pi as a second harness: `satyrn setup` installs pi too and lets the user choose the default (pi is the
       default); `satyrn interpreter` = Open Interpreter, `satyrn pi` = pi; `satyrn code` uses the default,
       `--pi` / `--open-interpreter` override it. The context files are named per harness, and the model
-      calls itself Satyrn.
+      calls itself Satyrn. → Node.js 24.22.2 pinned per platform, pi 1.5.2 from config/pi/package-lock.json
+      (`npm ci --ignore-scripts`, npm cache in .runtime); config/context/{pi,open-interpreter}.md; the guide
+      asks once; real run: pi wrote and ran hello.py with gpt-oss:20b, one sentence per line.
+  - [ ] `check`/`bench --harness pi` and a clean comparison with Open Interpreter.
 - [x] Can the model be told to put a line break after each sentence, and does that work in Open Interpreter?
       → yes: its renderer keeps single line breaks (`soft_break` → new line, test `paragraph_soft_break`);
       the instruction goes into both context files; pi's rendering to be checked when pi is integrated
 
 - [x] Quick start should also mention uv. → a `uv` tab next to Linux/macOS and Windows
+
+- [x] "What you need" should list what you need, not Node.js. → row removed (satyrn brings its own Node.js)
+- [ ] Can the model load the context before the first request? → yes: `satyrn code` lets the coding agent
+      send a tiny warm-up request in the background, so Ollama has the fixed context cached when the user's
+      first request arrives (measured: ~1:00 warm vs ~2:33 cold). Build it after the pi integration.
+
+- [x] Finish this up and publish the current state. → committed, pushed, deploy checked
 
 ## Follow-ups found along the way
 

@@ -32,6 +32,17 @@ def default_model(layout: Layout, pins: Pins) -> str:
     return load(layout).get("model") or pins.model
 
 
+HARNESSES = ("pi", "open-interpreter")  # the coding agents satyrn installs; the first is the default
+
+
+def default_harness(layout: Layout) -> str:
+    return load(layout).get("harness") or HARNESSES[0]
+
+
+def set_default_harness(layout: Layout, harness: str) -> None:
+    save(layout, load(layout) | {"harness": harness})
+
+
 def set_default_model(layout: Layout, model: str) -> None:
     save(layout, load(layout) | {"model": model})
 

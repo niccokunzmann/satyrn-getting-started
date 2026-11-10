@@ -24,6 +24,7 @@ from . import (
     modelinfo,
     modelpins,
     ollama,
+    piagent,
     procs,
     settings,
 )
@@ -31,12 +32,20 @@ from .bench import interpreter_env
 from .layout import IS_WINDOWS, Layout, Pins, platform_key
 
 
-def run_tool(exe: Path, args: list[str], env: dict[str, str]) -> int:
+def run_tool(exe: Path, args: list[str], env: dict[str, str], cwd: Path | None = None) -> int:
     """Hand the terminal to ``exe`` (exec on POSIX so signals/TTY behave natively)."""
     if IS_WINDOWS:
-        return subprocess.call([str(exe), *args], env=env)
+        return subprocess.call([str(exe), *args], env=env, cwd=cwd)
+    if cwd is not None:
+        os.chdir(cwd)
     os.execve(exe, [str(exe), *args], env)  # noqa: S606 - pinned, verified binary
     return 0  # unreachable
+
+
+def run_pi(layout: Layout, pins: Pins, args: list[str], cwd: Path | None = None) -> int:
+    piagent.write_config(layout, pins)
+    node, *rest = piagent.command(layout, args)
+    return run_tool(Path(node), rest, piagent.env(layout, pins), cwd)
 
 
 # --- generated files ---------------------------------------------------------------------
@@ -98,8 +107,15 @@ def cmd_setup(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
         if component == "ollama" and not fetch.is_unpacked(target, asset.sha256) and ollama.is_up(pins):
             raise SystemExit("Ollama must be (re)installed but a server is running; stop it first: satyrn stop")
         fetch.unpack(archive, target, asset.sha256)
+    print(f"node {pins.data['node']['version']} and pi {pins.data['pi']['version']}:")
+    piagent.install(layout, pins)
+    if args.harness:
+        settings.set_default_harness(layout, args.harness)
     print("configuration:")
     write_interpreter_config(layout, pins)
+    piagent.write_config(layout, pins)
+    print(f"  pi       {layout.pi_home}")
+    print(f"  default coding agent: {settings.default_harness(layout)}")
     write_launchers(layout)
     if not args.no_model:
         model = args.model or settings.default_model(layout, pins)
@@ -209,6 +225,9 @@ def cmd_code(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
         raise SystemExit(f"{model} is not downloaded yet: satyrn pull {model}  (or run `satyrn` to be guided)")
     _start_if_wanted(layout, pins)
     folder.mkdir(parents=True, exist_ok=True)
+    if (args.harness or settings.default_harness(layout)) == "pi":
+        prompt = ["--print", args.prompt] if args.prompt else []
+        return run_pi(layout, pins, ["--model", piagent.model_ref(model), *prompt], cwd=folder)
     agentconfig.write_catalog(layout, pins)
     if args.prompt:
         argv = ["exec", "--oss", "-m", model, "--skip-git-repo-check", "-s", "workspace-write", "-C", str(folder)]
@@ -259,6 +278,15 @@ def build_parser() -> argparse.ArgumentParser:
     co.add_argument("dir", nargs="?", default=".", help="folder to work in (default: the current one)")
     co.add_argument("-p", "--prompt", help="one request; the model works on it until done, then exits")
     co.add_argument("-m", "--model", help="a listed model (name or number) instead of your default")
+    agent = co.add_mutually_exclusive_group()
+    agent.add_argument("--pi", dest="harness", action="store_const", const="pi", help="use pi this time")
+    agent.add_argument(
+        "--open-interpreter",
+        dest="harness",
+        action="store_const",
+        const="open-interpreter",
+        help="use Open Interpreter this time",
+    )
     sub.add_parser("models", help="rate the prepared models for this computer")
     u = sub.add_parser("use", help="make a model your default")
     u.add_argument("model", help="model name, or its number in `satyrn models`")
@@ -267,6 +295,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("setup", help="download + verify Ollama and Open Interpreter, write config, pull the model")
     s.add_argument("--model", help="model to pull instead of [model].default")
     s.add_argument("--no-model", action="store_true", help="skip the model download")
+    s.add_argument("--harness", choices=settings.HARNESSES, help="default coding agent for `satyrn code` (default: pi)")
     sub.add_parser("verify", help="re-check every pinned checksum and the model digest")
     sub.add_parser("serve", help="run Ollama in the foreground (Ctrl+C stops it)")
     sub.add_parser("start", help="start Ollama in the background")
@@ -280,7 +309,9 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("models", nargs="*", help="models to benchmark")
     b.add_argument("--runs", type=int, default=1, help="runs per model (default 1)")
     b.add_argument("--warm", action="store_true", help="keep the model loaded between runs (prompt cache reused)")
-    b.add_argument("--instructions", type=Path, help="try another system prompt instead of config/instructions.md")
+    b.add_argument(
+        "--instructions", type=Path, help="try another system prompt instead of config/context/open-interpreter.md"
+    )
     b.add_argument(
         "--set", action="append", default=[], metavar="KEY=VALUE", help="interpreter config override (repeatable)"
     )
@@ -293,7 +324,7 @@ def build_parser() -> argparse.ArgumentParser:
             default=procs.TIME_LIMIT,
             help=f"stop a run, and everything it started, after this many seconds (default {procs.TIME_LIMIT:.0f})",
         )
-    for name, what in (("interpreter", "Open Interpreter"), ("ollama", "Ollama CLI")):
+    for name, what in (("pi", "pi"), ("interpreter", "Open Interpreter"), ("ollama", "Ollama CLI")):
         t = sub.add_parser(name, help=f"run the pinned {what} with project settings", add_help=False)
         t.add_argument("args", nargs=argparse.REMAINDER)
     return p
@@ -344,6 +375,8 @@ def main(root: Path, argv: list[str] | None = None) -> int:
     if argv and argv[0] == "interpreter":
         agentconfig.write_catalog(layout, pins)
         return run_tool(layout.interpreter_exe(), argv[1:], interpreter_env(layout, pins))
+    if argv and argv[0] == "pi":
+        return run_pi(layout, pins, argv[1:])
     if argv and argv[0] == "ollama":
         return run_tool(layout.ollama_exe(), argv[1:], ollama.server_env(layout, pins))
     if argv and argv[0] == "__complete":  # called by the shell on Tab: `__complete INDEX WORDS...`

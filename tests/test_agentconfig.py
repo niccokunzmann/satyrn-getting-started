@@ -50,7 +50,7 @@ def interpreter(layout: Layout, *args: str) -> subprocess.CompletedProcess[str]:
 
 def test_catalog_has_every_model_with_our_instructions(generated: Layout) -> None:
     catalog = json.loads(generated.catalog.read_text(encoding="utf-8"))
-    instructions = (ROOT / "config" / "instructions.md").read_text(encoding="utf-8")
+    instructions = (ROOT / "config" / "context" / "open-interpreter.md").read_text(encoding="utf-8")
     entries = {entry["slug"]: entry for entry in catalog["models"]}
     assert set(entries) == set(agentconfig.known_models(generated))
     assert PINS.model in entries

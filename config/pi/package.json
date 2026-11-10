@@ -1,0 +1,8 @@
+{
+  "name": "satyrn-pi",
+  "private": true,
+  "description": "pi for satyrn, installed with `npm ci --ignore-scripts` from package-lock.json (see pins.toml)",
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "1.5.2"
+  }
+}

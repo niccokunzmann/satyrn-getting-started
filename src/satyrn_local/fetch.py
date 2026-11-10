@@ -1,4 +1,4 @@
-"""Download pinned archives, verify sha256, unpack them (zip, tar.gz, tar.zst)."""
+"""Download pinned archives, verify sha256, unpack them (zip, tar.gz, tar.xz, tar.zst)."""
 
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ def unpack(archive: Path, destination: Path, sha256: str) -> None:
         with zipfile.ZipFile(archive) as zf:
             zf.extractall(destination)  # noqa: S202 - zipfile drops absolute and ".." member paths
     else:
-        mode = "r:zst" if name.endswith(".zst") else "r:gz"
+        mode = "r:zst" if name.endswith(".zst") else "r:xz" if name.endswith(".xz") else "r:gz"
         with tarfile.open(archive, mode) as tf:
             tf.extractall(destination, filter="data")  # "data" filter blocks unsafe members
     stamp.write_text(sha256 + "\n")

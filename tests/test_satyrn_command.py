@@ -222,7 +222,7 @@ def test_guide_asks_and_accepts_no(project: Path) -> None:
     assert proc.wait(timeout=30) == 0
     os.close(controller)
     text = output.decode()
-    assert "Download and verify Ollama and Open Interpreter now" in text
+    assert "Download and verify Ollama, Open Interpreter and pi now" in text
     assert "Later: satyrn setup --no-model" in text
     assert not (project / ".runtime" / "downloads").exists(), "nothing may be downloaded after answering no"
 

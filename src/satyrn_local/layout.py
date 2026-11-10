@@ -155,6 +155,27 @@ class Layout:
                 return candidate
         raise SystemExit(f"Ollama is not installed in {self.ollama_dir}; run: satyrn setup")
 
+    @property
+    def node_dir(self) -> Path:
+        return self.runtime / "node"
+
+    @property
+    def pi_dir(self) -> Path:
+        """pi and its npm packages (installed with `npm ci` from config/pi/package-lock.json)."""
+        return self.runtime / "pi"
+
+    @property
+    def pi_home(self) -> Path:
+        """pi's settings, model list, system prompt and sessions (PI_CODING_AGENT_DIR)."""
+        return self.runtime / "pi-home"
+
+    def node_exe(self) -> Path:
+        pattern = "*/node.exe" if EXE else "*/bin/node"
+        found = sorted(self.node_dir.glob(pattern))
+        if not found:
+            raise SystemExit(f"Node.js is not installed in {self.node_dir}; run: satyrn setup")
+        return found[0]
+
     def interpreter_exe(self) -> Path:
         candidate = self.interpreter_dir / "bin" / f"interpreter{EXE}"
         if not candidate.is_file():

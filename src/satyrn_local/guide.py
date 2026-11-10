@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from . import fetch, machine, modelinfo, ollama, settings
+from . import fetch, machine, modelinfo, ollama, piagent, settings
 from .layout import Layout, Pins
 
 Step = Callable[[], object]
@@ -21,7 +21,28 @@ def tools_ready(layout: Layout, pins: Pins) -> bool:
             for component, target in (("ollama", layout.ollama_dir), ("interpreter", layout.interpreter_dir))
         )
         and (layout.interpreter_home / "config.toml").is_file()
+        and piagent.is_installed(layout, pins)
     )
+
+
+HARNESS_CHOICES = (
+    ("pi", "pi: tools to read, write and edit files; runs commands without asking (no sandbox)"),
+    ("open-interpreter", "Open Interpreter: commands run in a sandbox and may ask for your approval"),
+)
+
+
+def ask_harness() -> str:
+    print("Which coding agent should `satyrn code` use?")
+    for number, (_name, text) in enumerate(HARNESS_CHOICES, 1):
+        print(f"  {number}  {text}")
+    try:
+        answer = input("Number or name [1] ").strip() or "1"
+    except EOFError:
+        answer = "1"
+    names = [name for name, _text in HARNESS_CHOICES]
+    if answer.isdigit() and 1 <= int(answer) <= len(names):
+        return names[int(answer) - 1]
+    return answer if answer in names else names[0]
 
 
 def ask_yes(question: str, *, default: bool = True) -> bool:
@@ -54,12 +75,12 @@ def run(layout: Layout, pins: Pins, *, interactive: bool, setup: Step, pull: Cal
     tools = tools_ready(layout, pins)
     pulled = settings.is_pulled(layout, model)
     server = ollama.is_up(pins)
-    ollama_version, interpreter_version = pins.data["ollama"]["version"], pins.data["interpreter"]["version"]
+    versions = {name: pins.data[name]["version"] for name in ("ollama", "interpreter", "pi")}
     print("Local code generation: what is ready\n")
     print(
         _line(
             "tools",
-            f"Ollama {ollama_version} and Open Interpreter {interpreter_version}"
+            f"Ollama {versions['ollama']}, Open Interpreter {versions['interpreter']} and pi {versions['pi']}"
             + ("" if tools else " are not downloaded yet"),
             done=tools,
         )
@@ -82,11 +103,15 @@ def run(layout: Layout, pins: Pins, *, interactive: bool, setup: Step, pull: Cal
         return 0
 
     if not tools:
-        if not ask_yes("Download and verify Ollama and Open Interpreter now (about 4 GB)?"):
+        if not ask_yes("Download and verify Ollama, Open Interpreter and pi now (about 4 GB)?"):
             print("Later: satyrn setup --no-model")
             return 0
         setup()
         print()
+    if "harness" not in settings.load(layout):
+        harness = ask_harness()
+        settings.set_default_harness(layout, harness)
+        print(f"`satyrn code` uses {harness} (change it with `satyrn setup --harness NAME`).\n")
     if not pulled:
         here = machine.detect(layout.runtime)
         found = modelinfo.choices(layout, pins, here)

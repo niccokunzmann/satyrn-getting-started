@@ -6,14 +6,14 @@ never registered, plus about 18 KB of tools a local model cannot use (sub-agents
 search). On a CPU that is ~6.7k prompt tokens (about five minutes) before the model starts, and
 the model wastes many turns calling the missing tool.
 
-``write_catalog`` turns config/models.toml plus config/instructions.md into the interpreter's
+``write_catalog`` turns config/models.toml plus config/context/open-interpreter.md into the interpreter's
 ``model_catalog_json``: one entry per model with our system prompt and the server's context
 window. config/interpreter.toml points the interpreter at it and switches the unused tools off.
 
 ``apply_patch`` stays unregistered on purpose. The interpreter offers it only as a "freeform"
 (custom grammar) tool; Ollama's Responses API returns such calls as JSON function calls, which
 the interpreter rejects ("tool apply_patch invoked with incompatible payload"). The models
-therefore create and edit files through ``exec_command``, as config/instructions.md explains.
+therefore create and edit files through ``exec_command``, as config/context/open-interpreter.md explains.
 """
 
 from __future__ import annotations
@@ -81,7 +81,7 @@ def write_catalog(
     ``instructions_file`` and ``target`` let `bench` try other instructions without touching
     the catalog that `interpreter` uses.
     """
-    source = instructions_file or layout.root / "config" / "instructions.md"
+    source = instructions_file or layout.root / "config" / "context" / "open-interpreter.md"
     instructions = source.read_text(encoding="utf-8").replace("@SHELL@", shell_name())
     models = load_models(layout)
     catalog = {

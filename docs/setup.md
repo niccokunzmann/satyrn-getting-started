@@ -10,7 +10,6 @@ question it asks has a default, so you can press {kbd}`Enter` throughout.
 | Computer | 64-bit Linux, macOS or Windows | Tested on Debian 13 (Linux). The scripts support macOS and Windows, but those have not been tested yet. |
 | Memory | 16 GB RAM | For the smallest benchmarked model. `satyrn models` shows which models fit your computer. |
 | Disk | 20 GB free | 13–23 GB per model, about 4 GB for the tools and their downloads. |
-| Node.js | not needed | satyrn downloads its own Node.js for pi into the project folder. |
 | Processor | any recent x86-64 or ARM CPU | No GPU needed. Ollama uses a supported GPU automatically. |
 | Software | `git`, Python 3.14, and uv or pipx | uv can also provide Python 3.14, see below. |
 | Network | while downloading | The tools are about 4 GB, a model 13–23 GB. |

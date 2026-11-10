@@ -80,10 +80,10 @@ SCRIPTS = {"bash": BASH, "zsh": ZSH, "fish": FISH, "powershell": POWERSHELL}
 
 # Which values an option or a command's positional argument takes.
 MODEL_OPTIONS = {"-m", "--model"}
-VALUE_CHOICES = {"--effort": ("low", "medium", "high")}
+VALUE_CHOICES = {"--effort": ("low", "medium", "high"), "--harness": ("pi", "open-interpreter")}
 PATH_OPTIONS = {"--instructions": FILES}
 POSITIONALS = {"pull": "models", "use": "models", "bench": "models", "code": DIRS, "completion": "shells"}
-PASS_THROUGH = {"interpreter", "ollama"}
+PASS_THROUGH = {"pi", "interpreter", "ollama"}
 
 
 def _subparsers(parser: argparse.ArgumentParser) -> dict[str, argparse.ArgumentParser]:

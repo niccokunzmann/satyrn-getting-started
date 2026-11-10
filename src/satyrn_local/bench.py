@@ -33,7 +33,7 @@ class Variant:
 
     label: str = "default"
     effort: str | None = None
-    instructions: Path | None = None  # another system prompt instead of config/instructions.md
+    instructions: Path | None = None  # another system prompt instead of config/context/open-interpreter.md
     overrides: tuple[str, ...] = ()  # interpreter config overrides, KEY=VALUE (TOML value)
     warm: bool = False  # keep the model loaded between runs (Ollama reuses its prompt cache)
 

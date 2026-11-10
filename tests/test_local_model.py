@@ -39,14 +39,14 @@ def _archive(tmp_path: Path, kind: str) -> Path:
         with zipfile.ZipFile(path, "w") as zf:
             zf.writestr("bin/tool", payload)
     else:
-        with tarfile.open(path, {"tar.zst": "w:zst", "tgz": "w:gz"}[kind]) as tf:
+        with tarfile.open(path, {"tar.zst": "w:zst", "tar.xz": "w:xz", "tgz": "w:gz"}[kind]) as tf:
             info = tarfile.TarInfo("bin/tool")
             info.size, info.mode = len(payload), 0o755
             tf.addfile(info, io.BytesIO(payload))
     return path
 
 
-@pytest.mark.parametrize("kind", ["tar.zst", "tgz", "zip"])
+@pytest.mark.parametrize("kind", ["tar.zst", "tar.xz", "tgz", "zip"])
 def test_download_verify_and_unpack(tmp_path: Path, kind: str) -> None:
     archive = _archive(tmp_path, kind)
     sha = hashlib.sha256(archive.read_bytes()).hexdigest()
