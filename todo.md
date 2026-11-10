@@ -102,13 +102,16 @@ Every request is recorded here as a todo, in the order it was given. The goals b
         past the 5 s client timeout, which crashed the next `bench`. `unload` now waits until
         the model is gone, with longer timeouts.
 
-- [ ] Publish the project as a Sphinx site on GitHub Pages under `github.com/niccokunzmann/`:
+- [x] Publish the project as a Sphinx site on GitHub Pages under `github.com/niccokunzmann/`:
       people follow a few setup steps that have defaults, then generate code with local models.
   - [x] Sphinx project in `docs/` (pinned, hash-checked build requirements; warnings are errors).
         → Furo + MyST; quick start with defaults on the front page; `make docs`; linkcheck clean;
         README shortened to a quick start that links to the site
   - [x] GitHub Actions workflow that builds the site and deploys it to Pages (actions pinned by SHA).
-  - [ ] Create the GitHub repository and push (needs the user's GitHub login).
+  - [x] Create the GitHub repository and push (needs the user's GitHub login).
+        → https://github.com/niccokunzmann/satyrn-getting-started (public), Pages from Actions:
+        https://niccokunzmann.github.io/satyrn-getting-started/ (all pages 200; a fresh clone works on its own)
+  - [ ] Choose a license (none yet, so others may not reuse the code; the satyrn-ai repos use MIT).
 
 ## Follow-ups found along the way
 
