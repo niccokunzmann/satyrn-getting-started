@@ -13,8 +13,8 @@ Ollama 0.40.15 and `gpt-oss:20b` with a 32k context, unless a section says other
 | # | Guess | Result | In satyrn |
 | --- | --- | --- | --- |
 | 1 | Loading the model costs time on the first request | **confirmed:** 25–29 s per load | `satyrn start` loads the default model in the background (no quality effect) |
-| 2 | Reading the agent's fixed context dominates the first answer; reading it in advance helps | measuring | `satyrn code` warms up in the background (no quality effect); `--no-warmup` |
-| 3 | pi sends a smaller context than Open Interpreter | measuring | — |
+| 2 | Reading the agent's fixed context dominates the first answer; reading it in advance helps | **confirmed:** first task 1:27 → 0:40 with pi | `satyrn code` warms up in the background (no quality effect); `--no-warmup` |
+| 3 | pi sends a smaller context than Open Interpreter | **confirmed:** 1,103 vs 1,692 tokens | pi is the default coding agent |
 | 4 | Ollama's batch size or thread count leave CPU speed unused | **no:** batch size within ±5 %; fewer threads are slower | Ollama's defaults stay |
 | 5 | Flash attention or a compressed context cache read faster | measuring | — |
 | 6 | Open Interpreter's interactive mode sends an extra request that delays the first answer | **confirmed:** a task-title request, up to ~1.5 min | pi (the default) does not send it; no setting turns it off in Open Interpreter |
@@ -48,12 +48,40 @@ reloads the model, which took 17–29 s each time (guess 1).
 
 ## 2. Reading the context in advance (warm-up)
 
-Built in, measurement pending: when `satyrn code` opens a conversation, it lets the same coding
-agent answer "Reply with OK." in the same folder in the background, as a separate session. By
-the time you send your first request, Ollama has the model loaded and the agent's whole fixed
-context in its cache, so it only reads your request. Your conversation sees nothing of the
-warm-up. `satyrn code --no-warmup` turns it off; `-p` requests skip it, as they are the first
+Before a model can act on your first request, it reads the coding agent's whole fixed context:
+the system prompt, the tool definitions and the working folder. On this CPU that takes most of
+the first answer. Ollama caches what it has read, so the same context is read only once while
+the model stays in memory.
+
+Built in: when `satyrn code` opens a conversation, it lets the same coding agent answer "Reply
+with OK." in the same folder in the background, as a separate session. By the time you send
+your first request, Ollama has the model loaded and the context cached, and reads only your
+request. Your conversation sees nothing of the warm-up, so quality is unchanged.
+`satyrn code --no-warmup` turns it off; `-p` requests skip it, because they are the first
 request themselves.
+
+Measured with `satyrn bench gpt-oss:20b --harness pi --runs 2 [--warmup]`: the `sqrt.py` task,
+the model freshly loaded each time, and with `--warmup` the warm-up first:
+
+| | Read before the task | Task | Passed |
+| --- | ---: | ---: | ---: |
+| without warm-up | 1,103 tokens in 46–50 s | 1:20, 1:34 | 2/2 |
+| after a warm-up | 37 new tokens in 2 s | 0:34, 0:47 | 2/2 |
+
+The warm-up itself took 47–52 s; it runs while you read and type.
+
+## 3. The size of the context per coding agent
+
+The first request of each agent, with satyrn's contexts (same task as above, without warm-up):
+
+| Coding agent | Context before the request | Reading it | Task |
+| --- | ---: | ---: | ---: |
+| pi | 1,103 tokens | 46–50 s | 1:20, 1:34 |
+| Open Interpreter | 1,692 tokens | 66 s | 1:45 |
+
+pi needs about a third fewer tokens: a short system prompt and four small tool definitions,
+against Open Interpreter's larger tool definitions, sandbox note and environment block. Both
+passed the task. pi is satyrn's default coding agent.
 
 ## 6. Open Interpreter's extra title request
 
