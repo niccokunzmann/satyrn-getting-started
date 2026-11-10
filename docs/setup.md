@@ -1,33 +1,34 @@
 # Set up
 
-Setup is four commands. Each step uses a default, so you only change something if you want to.
+Two commands install everything; the `satyrn` command then guides you through the rest. Every
+question it asks has a default, so you can press {kbd}`Enter` throughout.
 
 ## What you need
 
 | | Minimum | Notes |
 | --- | --- | --- |
 | Computer | 64-bit Linux, macOS or Windows | Tested on Debian 13 (Linux). The scripts support macOS and Windows, but those have not been tested yet. |
-| Memory | 16 GB RAM | For the default model. The larger models in [Choose a model](models.md) need up to 25 GB. |
-| Disk | 20 GB free | 13 GB model, about 4 GB for the tools and their downloads. |
+| Memory | 16 GB RAM | For the smallest benchmarked model. `satyrn models` shows which models fit your computer. |
+| Disk | 20 GB free | 13–23 GB per model, about 4 GB for the tools and their downloads. |
 | Processor | any recent x86-64 or ARM CPU | No GPU needed. Ollama uses a supported GPU automatically. |
-| Software | `git` and Python 3.14 | Or [uv](#python-314) instead of Python. |
-| Network | for `setup` only | It downloads about 17 GB. |
+| Software | `git`, Python 3.14, and uv or pipx | uv can also provide Python 3.14, see below. |
+| Network | while downloading | The tools are about 4 GB, a model 13–23 GB. |
 
 ## Python 3.14
 
-`satyrn.py` uses only Python's standard library, but needs version 3.14 or newer. Check with
+`satyrn` uses only Python's standard library, but needs version 3.14 or newer. Check with
 `python3.14 --version` (Windows: `py -3.14 --version`).
 
 If you do not have it, either install it from [python.org](https://www.python.org/downloads/)
 or your package manager, or use [uv](https://docs.astral.sh/uv/getting-started/installation/),
-which downloads Python 3.14 into its own cache without changing your system. With uv, write
-`uv run --no-project --python 3.14 satyrn.py` wherever these pages say `python3.14 satyrn.py`:
+which downloads Python 3.14 into its own cache without changing your system. With uv, the
+installation command is:
 
 ```bash
-uv run --no-project --python 3.14 satyrn.py setup
+uv run --no-project --python 3.14 satyrn.py install
 ```
 
-## Step by step
+## Install the `satyrn` command
 
 ::::{tab-set}
 
@@ -37,8 +38,7 @@ uv run --no-project --python 3.14 satyrn.py setup
 ```bash
 git clone https://github.com/niccokunzmann/satyrn-getting-started.git
 cd satyrn-getting-started
-python3.14 satyrn.py setup
-python3.14 satyrn.py start
+python3.14 satyrn.py install
 ```
 
 :::
@@ -49,31 +49,71 @@ python3.14 satyrn.py start
 ```powershell
 git clone https://github.com/niccokunzmann/satyrn-getting-started.git
 cd satyrn-getting-started
-py -3.14 satyrn.py setup
-py -3.14 satyrn.py start
+py -3.14 satyrn.py install
 ```
 
 :::
 
 ::::
 
-`setup`
-: Downloads Ollama and Open Interpreter for your platform, checks each download against the
-  SHA-256 checksum in `pins.toml`, and unpacks them into `.runtime/`. It writes the
-  interpreter's configuration and pulls the default model. Most of the time goes to the 13 GB
-  model download. Running `setup` again is safe: finished steps are skipped.
+`install` does two things:
 
-`start`
-: Starts the Ollama model server in the background on `127.0.0.1:11434`. It keeps running until
-  you run `stop` (or restart the computer). Nothing ever starts it automatically.
+- It installs the `satyrn` command with [uv](https://docs.astral.sh/uv/) (`uv tool install`)
+  or, if uv is missing, with [pipx](https://pipx.pypa.io/). The command is linked to this
+  folder: it runs the code here, and everything it downloads goes into this folder's
+  `.runtime/`.
+- It installs tab completion for your shell (bash, zsh, fish or PowerShell), so
+  {kbd}`Tab` completes commands, options and model names. Open a new terminal to use it.
 
-Now [generate code](generate.md).
+If your shell reports `satyrn: command not found`, the folder with uv's or pipx's commands is
+not on your `PATH` yet. `uv tool update-shell` or `pipx ensurepath` adds it.
+
+You can also skip the installation: every `satyrn …` command on these pages works as
+`python3.14 satyrn.py …` inside the folder.
+
+## Let `satyrn` guide you
+
+Run `satyrn` without a command. It shows what is ready and offers the next step:
+
+```text
+$ satyrn
+Local code generation: what is ready
+
+  [ ] tools    Ollama 0.40.15 and Open Interpreter 0.0.60 are not downloaded yet
+  [ ] model    no model downloaded yet
+  [ ] server   not running
+
+Download and verify Ollama and Open Interpreter now (about 4 GB)? [Y/n]
+```
+
+It continues with the models that fit this computer (see [Choose a model](models.md)), asks
+which one to download, and offers to start the model server. When everything is ready, it
+shows how to start working. Run `satyrn` again at any time to see where things stand; it only
+asks about steps that are still missing.
+
+The guide never starts anything without asking, and nothing starts automatically later: the
+model server runs only after you start it, until you stop it or restart the computer.
+
+## The same steps by hand
+
+```bash
+satyrn setup --no-model        # download and verify Ollama and Open Interpreter (about 4 GB)
+satyrn models                  # which models fit this computer
+satyrn pull gpt-oss:20b        # download a model
+satyrn use gpt-oss:20b         # make it the default
+satyrn start                   # start the model server in the background
+satyrn status                  # what is installed, running and loaded
+```
+
+`satyrn setup` without `--no-model` also downloads the default model. Running `setup` again is
+safe: finished steps are skipped.
 
 ## Defaults
 
 | Setting | Default | How to change it |
 | --- | --- | --- |
-| Model | `gpt-oss:20b` | `-m MODEL` per session, or `[model].default` in `pins.toml` ([Choose a model](models.md)) |
+| Model | the guide's recommendation, else `gpt-oss:20b` | `satyrn use MODEL`, or `-m MODEL` for one session |
+| Folder the model works in | the folder you name, or the current one | `satyrn code DIR` |
 | Server address | `127.0.0.1:11434`, local only | `[ollama].port` in `pins.toml` |
 | Context window | 32,768 tokens | `[model].context_length` in `pins.toml` |
 | Reasoning effort (`gpt-oss:20b`) | medium | `default_effort` in `config/models.toml` |
@@ -83,41 +123,44 @@ Now [generate code](generate.md).
 ## Check that it works
 
 ```bash
-python3.14 satyrn.py status    # server, installed and loaded models
-python3.14 satyrn.py check     # the model writes sqrt.py; the script then runs it
+satyrn check
 ```
 
 `check` asks the model to write a square-root program, then runs that program with 16, 2 and
-0.25 and compares the output. It prints `SUCCESS` after about two minutes with the default
-model on a laptop CPU.
+0.25 and compares the output. It prints `SUCCESS` after about two minutes with `gpt-oss:20b` on
+a laptop CPU.
 
 ## Stop and remove
 
 ```bash
-python3.14 satyrn.py stop      # stop the model server
+satyrn stop                    # stop the model server
+satyrn uninstall               # remove the `satyrn` command and its tab completion
 ```
 
-To remove everything, stop the server and delete the `satyrn-getting-started` folder. Nothing
-was installed anywhere else: the model, the tools, their settings and their keys all live in
-its `.runtime/` subfolder.
+Then delete the `satyrn-getting-started` folder. That removes everything else: the model, the
+tools, their settings and their keys all live in its `.runtime/` subfolder.
 
 ## Troubleshooting
+
+`satyrn: command not found`
+: See [Install the `satyrn` command](#install-the-satyrn-command), or use
+  `python3.14 satyrn.py` instead.
 
 `another server already listens on port 11434`
 : Another Ollama is running, for example one you installed earlier. Stop it, or set a different
   `[ollama].port` in `pins.toml`.
 
 `Ollama is not running; start it first`
-: Run `python3.14 satyrn.py start`. The server does not survive a restart of the computer.
+: Run `satyrn start`. The server does not survive a restart of the computer.
 
 `satyrn.py needs Python 3.14 or newer`
 : See [Python 3.14](#python-314).
 
 The model is very slow or the computer swaps
-: The model needs more memory than is free. Close other programs, or use the default
-  `gpt-oss:20b`, the smallest of the [benchmarked models](models.md).
+: The model needs more memory than is free. `satyrn models` shows what fits; close other
+  programs or choose a smaller model.
 
 `... resolved to ..., but pins.toml pins ...`
-: The model tag was changed upstream since this project pinned it. This stops the setup on
+: The model tag was changed upstream since this project pinned it. This stops the download on
   purpose, so you never get a different model without noticing. Update the digest in
   `pins.toml` if you want the new version.

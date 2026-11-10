@@ -1,22 +1,29 @@
 # Reference
 
-## `satyrn.py` commands
+## `satyrn` commands
 
-Run them as `python3.14 satyrn.py COMMAND` (Windows: `py -3.14 satyrn.py COMMAND`).
+Without the installed command, write `python3.14 satyrn.py COMMAND` in the project folder
+(Windows: `py -3.14 satyrn.py COMMAND`).
 
 | Command | What it does |
 | --- | --- |
-| `setup [--model M] [--no-model]` | Download, verify and unpack Ollama and Open Interpreter, write their settings, pull the default model (or `M`). |
-| `start` | Start the Ollama server in the background. |
-| `stop` | Stop the server started with `start`. |
+| *(none)* | Show what is ready and offer each missing step: tools, model, server. |
+| `install` | Install the `satyrn` command (linked to this folder) and tab completion for your shell. Run as `python3.14 satyrn.py install`. |
+| `uninstall` | Remove the command and the tab completion. The folder stays. |
+| `code [DIR] [-p REQUEST] [-m MODEL]` | Work with the model in `DIR` (default: the current folder): a conversation, or one request with `-p`. |
+| `models` | Rate every prepared model for this computer, with benchmark results. |
+| `use MODEL` | Make `MODEL` your default. |
+| `setup [--model M] [--no-model]` | Download, verify and unpack Ollama and Open Interpreter, write their settings, download the default model (or `M`). |
+| `pull MODEL` | Download a model and compare its digest with `pins.toml`. |
+| `start` / `stop` | Start the Ollama server in the background / stop it. |
 | `serve` | Run the server in the foreground; {kbd}`Ctrl+C` stops it. |
 | `status` | Show the server, the installed models and the loaded ones. |
-| `interpreter ARGS…` | Run the project's Open Interpreter with the project's settings. All arguments are passed on, for example `--oss`, `-m MODEL`, `-C DIR`, `exec`. |
-| `ollama ARGS…` | Run the project's Ollama command line, for example `ollama list` or `ollama rm MODEL`. |
-| `pull MODEL` | Download another model and compare its digest with `pins.toml`. |
-| `check [--model M] [--effort E] [--timeout S]` | The model writes `sqrt.py` through `interpreter exec`; the program is then run and its output checked. |
-| `bench [MODEL…] [--runs N] [--effort E] [--timeout S]` | Time models on the same task; default: every model in `config/models.toml`, one run each. |
-| `verify` | Re-check every pinned archive, unpacked tool and pulled model. |
+| `check [--model M] [--effort E] [--timeout S]` | The model writes `sqrt.py`; the program is then run and its output checked. |
+| `bench [MODEL…] [--runs N] [--warm] [--instructions FILE] [--set KEY=VALUE] [--effort E] [--timeout S]` | Time models on the same task; default: every model in `config/models.toml`, one run each. |
+| `verify` | Re-check every pinned archive, unpacked tool and downloaded model. |
+| `interpreter ARGS…` | Run the project's Open Interpreter with the project's settings; all arguments are passed on. |
+| `ollama ARGS…` | Run the project's Ollama command line, for example `satyrn ollama list`. |
+| `completion SHELL` | Print the tab-completion script for `bash`, `zsh`, `fish` or `powershell`. |
 
 `--effort` sets the reasoning effort for models that have one (`gpt-oss:20b`: `low`, `medium`,
 `high`). `--timeout` is the time limit per run in seconds, 3600 by default.
@@ -27,10 +34,11 @@ The Makefile is only a shortcut on systems with `make`; all logic is in `satyrn.
 
 | Target | Same as |
 | --- | --- |
-| `make setup`, `start`, `stop`, `serve`, `status`, `verify`, `check`, `bench` | `python3.14 satyrn.py …` |
-| `make oss` | `python3.14 satyrn.py interpreter --oss` |
+| `make setup`, `start`, `stop`, `serve`, `status`, `verify`, `check`, `bench` | `satyrn …` |
+| `make oss` | `satyrn code` |
 | `make test`, `test-live`, `lint`, `format`, `docs` | see [Contributing](contributing.md) |
-| `make install` | install `satyrn-codegen` with pipx ([Satyrn's own engine](satyrn-engine.md)) |
+| `make install` | `python3.14 satyrn.py install` |
+| `make install-codegen` | install `satyrn-codegen` with pipx ([Satyrn's own engine](satyrn-engine.md)) |
 
 ## Files you may edit
 
@@ -41,10 +49,11 @@ The Makefile is only a shortcut on systems with `make`; all logic is in `satyrn.
 : The system prompt every local model gets.
 
 `config/models.toml`
-: The models Open Interpreter knows how to drive, with their reasoning efforts.
+: The models Open Interpreter knows how to drive: reasoning efforts, sizes and benchmark results for
+  `satyrn models`.
 
 `config/interpreter.toml`
-: Open Interpreter settings. After editing, run `python3.14 satyrn.py setup` again.
+: Open Interpreter settings. After editing, run `satyrn setup` again.
 
 ## Environment
 

@@ -18,7 +18,7 @@ deletes the download and stops. A model whose tag now points to a different dige
 To check an existing setup:
 
 ```bash
-python3.14 satyrn.py verify
+satyrn verify
 ```
 
 It re-checks every archive, every unpacked tool and every pulled model against `pins.toml`.
@@ -27,5 +27,5 @@ It re-checks every archive, every unpacked tool and every pulled model against `
 
 Change a version only together with all of its checksums: download the new release files,
 compute their SHA-256 (`python3.14 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" FILE`)
-and update `pins.toml`. For a model, `python3.14 satyrn.py pull NAME:TAG` prints the new digest.
+and update `pins.toml`. For a model, `satyrn pull NAME:TAG` prints the new digest.
 Then run `setup`, `verify` and `check` (or `bench`) to see that everything still works.

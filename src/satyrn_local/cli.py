@@ -169,7 +169,14 @@ def cmd_bench(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     missing = [m for m in models if ollama.model_digest(pins, m) is None]
     if missing:
         raise SystemExit("not pulled: " + ", ".join(missing) + "\n  python satyrn.py pull " + " ".join(missing))
-    outcomes = bench.benchmark(layout, pins, models, runs=args.runs, effort=args.effort, timeout=args.timeout)
+    variant = bench.Variant(
+        label=args.label or (args.instructions.stem if args.instructions else "default"),
+        effort=args.effort,
+        instructions=args.instructions,
+        overrides=tuple(args.set),
+        warm=args.warm,
+    )
+    outcomes = bench.benchmark(layout, pins, models, runs=args.runs, timeout=args.timeout, variant=variant)
     return 0 if all(o.passed for o in outcomes) else 1
 
 
@@ -192,6 +199,12 @@ def build_parser() -> argparse.ArgumentParser:
     b = sub.add_parser("bench", help="time models on the sqrt.py task (default: all in config/models.toml)")
     b.add_argument("models", nargs="*", help="models to benchmark")
     b.add_argument("--runs", type=int, default=1, help="runs per model (default 1)")
+    b.add_argument("--warm", action="store_true", help="keep the model loaded between runs (prompt cache reused)")
+    b.add_argument("--instructions", type=Path, help="try another system prompt instead of config/instructions.md")
+    b.add_argument(
+        "--set", action="append", default=[], metavar="KEY=VALUE", help="interpreter config override (repeatable)"
+    )
+    b.add_argument("--label", help="name of this variant in the results")
     for task in (c, b):
         task.add_argument("--effort", help="reasoning effort for models that have one (e.g. low)")
         task.add_argument(

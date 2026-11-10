@@ -25,7 +25,7 @@ This path has not been tested on a Mac by this project yet.
 4. Install the CLI with [pipx](https://pipx.pypa.io/) and run it:
 
 ```bash
-make install       # builds satyrn-agent and satyrn-codegen wheels, installs them with pipx
+make install-codegen   # builds satyrn-agent and satyrn-codegen wheels, installs them with pipx
 export SATYRN_MODEL=~/models/Qwen3.8-27B-Q4_K_M.gguf
 export SATYRN_DRAFTER=~/models/dflash-Qwen3.8-27B-Q4_0.gguf
 satyrn-codegen "create a program that takes a number and outputs the square root of it"

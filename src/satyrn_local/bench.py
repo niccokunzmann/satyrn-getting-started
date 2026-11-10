@@ -27,6 +27,17 @@ SQRT_PROMPT = (
 SQRT_CASES = (("16", 4.0), ("2", math.sqrt(2)), ("0.25", 0.5))
 
 
+@dataclass(frozen=True)
+class Variant:
+    """What `bench` may vary besides the model."""
+
+    label: str = "default"
+    effort: str | None = None
+    instructions: Path | None = None  # another system prompt instead of config/instructions.md
+    overrides: tuple[str, ...] = ()  # interpreter config overrides, KEY=VALUE (TOML value)
+    warm: bool = False  # keep the model loaded between runs (Ollama reuses its prompt cache)
+
+
 @dataclass
 class Outcome:
     model: str
@@ -36,12 +47,21 @@ class Outcome:
     exit_code: int | None  # None: stopped at the time limit
     workdir: str
     effort: str | None = None
+    variant: str = "default"
+    warm: bool = False
     load_seconds: float | None = None
     digest: str | None = None
     usage: dict[str, int] = field(default_factory=dict)  # summed over all model turns
     items: dict[str, int] = field(default_factory=dict)  # completed items by type (commands, patches, ...)
     failed_items: int = 0
     errors: list[str] = field(default_factory=list)
+    # From the server log: one entry per model request (read = prompt processing, write = generation).
+    requests: list[dict[str, float]] = field(default_factory=list)
+
+    @property
+    def intake_seconds(self) -> float | None:
+        """Time to read the context before the first answer (the first request's prompt processing)."""
+        return self.requests[0]["read_s"] if self.requests else None
 
 
 def interpreter_env(layout: Layout, pins: Pins) -> dict[str, str]:
@@ -76,22 +96,32 @@ def run_sqrt(
     *,
     effort: str | None = None,
     timeout: float | None = procs.TIME_LIMIT,
+    variant: Variant | None = None,
 ) -> Outcome:
     """Ask ``model`` for sqrt.py in a fresh directory, then check the program it wrote.
 
     After ``timeout`` seconds the run is stopped with everything it started, so a model that
     cannot finish (or a program it started that never ends) cannot block a check or benchmark.
     """
+    variant = variant or Variant(effort=effort)
     agentconfig.write_catalog(layout, pins)
     work = layout.runtime / "checks" / f"{time.strftime('%Y%m%d-%H%M%S')}-{model.replace(':', '_')}"
     work.mkdir(parents=True)
     cmd = [str(layout.interpreter_exe()), "exec", "--json", "--oss", "-m", model, "--skip-git-repo-check"]
     cmd += ["-s", "workspace-write", "-C", str(work)]
-    if effort:
-        cmd += ["-c", f'model_reasoning_effort="{effort}"']
+    if variant.effort:
+        cmd += ["-c", f'model_reasoning_effort="{variant.effort}"']
+    if variant.instructions:
+        catalog = agentconfig.write_catalog(
+            layout, pins, variant.instructions, layout.bench / f"catalog-{variant.instructions.stem}.json"
+        )
+        cmd += ["-c", f"model_catalog_json={json.dumps(str(catalog))}"]
+    for override in variant.overrides:
+        cmd += ["-c", override]
     cmd.append(SQRT_PROMPT)
     outcome = Outcome(model=model, passed=False, detail="", seconds=0.0, exit_code=None, workdir=str(work))
-    outcome.effort = effort
+    outcome.effort, outcome.variant, outcome.warm = variant.effort, variant.label, variant.warm
+    log_start = layout.logfile.stat().st_size if layout.logfile.is_file() else None
     usage: Counter[str] = Counter()
     items: Counter[str] = Counter()
     started = time.monotonic()
@@ -108,6 +138,10 @@ def run_sqrt(
     )
     outcome.seconds = round(time.monotonic() - started, 1)
     outcome.exit_code = exit_code
+    if log_start is not None:
+        with layout.logfile.open(encoding="utf-8", errors="replace") as log:
+            log.seek(log_start)
+            outcome.requests = ollama.request_timings(log.read())
     outcome.usage, outcome.items = dict(usage), dict(items)
     # Calls the interpreter refuses (unknown tool, bad arguments) only show up in its log.
     refused = [line for line in stderr_log.read_text(encoding="utf-8").splitlines() if "tools::router: error=" in line]
@@ -178,8 +212,8 @@ def benchmark(
     models: list[str],
     *,
     runs: int,
-    effort: str | None,
     timeout: float,
+    variant: Variant,
 ) -> list[Outcome]:
     out = layout.bench / f"{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
     layout.bench.mkdir(parents=True, exist_ok=True)
@@ -187,17 +221,24 @@ def benchmark(
     for model in models:
         digest = ollama.model_digest(pins, model)
         for run in range(1, runs + 1):
-            print(f"\n=== {model}, run {run}/{runs}", flush=True)
-            # One model in memory at a time, and no prompt cache left over from an earlier run.
-            for loaded in ollama.loaded_models(pins):
-                ollama.unload(pins, loaded)
-            load_seconds = ollama.load(pins, model)
-            print(f"  loaded in {load_seconds:.0f}s", flush=True)
-            outcome = run_sqrt(layout, pins, model, effort=effort, timeout=timeout)
+            print(f"\n=== {model}, run {run}/{runs} ({variant.label})", flush=True)
+            load_seconds = 0.0
+            if run == 1 or not variant.warm:
+                # One model in memory at a time, and no prompt cache left over from an earlier run.
+                for loaded in ollama.loaded_models(pins):
+                    ollama.unload(pins, loaded)
+                load_seconds = ollama.load(pins, model)
+                print(f"  loaded in {load_seconds:.0f}s", flush=True)
+            outcome = run_sqrt(layout, pins, model, timeout=timeout, variant=variant)
             outcome.load_seconds, outcome.digest = round(load_seconds, 1), digest
-            print(f"  {'PASS' if outcome.passed else 'FAIL'} in {outcome.seconds:.0f}s: {outcome.detail}", flush=True)
+            outcome.warm = variant.warm and run > 1
+            intake = f", context read in {outcome.intake_seconds:.0f}s" if outcome.intake_seconds is not None else ""
+            print(
+                f"  {'PASS' if outcome.passed else 'FAIL'} in {outcome.seconds:.0f}s{intake}: {outcome.detail}",
+                flush=True,
+            )
             with out.open("a", encoding="utf-8") as handle:
-                handle.write(json.dumps(asdict(outcome)) + "\n")
+                handle.write(json.dumps(asdict(outcome) | {"intake_seconds": outcome.intake_seconds}) + "\n")
             outcomes.append(outcome)
     for loaded in ollama.loaded_models(pins):
         ollama.unload(pins, loaded)
@@ -211,19 +252,24 @@ def _minutes(seconds: float) -> str:
 
 
 def table(outcomes: list[Outcome]) -> str:
-    """Markdown table of benchmark outcomes."""
+    """Markdown table of benchmark outcomes. Read/write: the server's prompt processing and
+    generation time summed over all requests of the run; context: the first request's reading."""
     rows = [
-        "| Model | Effort | Result | Time (m:s) | Load (s) | Prompt tokens (cached) | Output tokens "
-        "| Commands | Failed calls |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Model | Variant | Result | Time (m:s) | Load (s) | Context read (s / tokens) | Read (s) "
+        "| Write (s / tokens) | Requests | Commands | Failed calls |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for o in outcomes:
-        prompt = o.usage.get("input_tokens", 0)
-        cached = o.usage.get("cached_input_tokens", 0)
         result = "pass" if o.passed else ("timeout" if o.exit_code is None else "fail")
+        variant = o.variant + (", warm" if o.warm else "") + (f", effort {o.effort}" if o.effort else "")
+        first = o.requests[0] if o.requests else None
+        context = f"{first['read_s']:.0f} / {first['read_tokens']:.0f}" if first else "-"
+        read = sum(r["read_s"] for r in o.requests)
+        write_s = sum(r["write_s"] for r in o.requests)
+        write_tokens = sum(r["write_tokens"] for r in o.requests)
         rows.append(
-            f"| {o.model} | {o.effort or 'default'} | {result} | {_minutes(o.seconds)} | {o.load_seconds or 0:.0f} "
-            f"| {prompt:,} ({cached:,}) | {o.usage.get('output_tokens', 0):,} "
+            f"| {o.model} | {variant} | {result} | {_minutes(o.seconds)} | {o.load_seconds or 0:.0f} | {context} "
+            f"| {read:.0f} | {write_s:.0f} / {write_tokens:.0f} | {len(o.requests)} "
             f"| {o.items.get('command_execution', 0)} | {o.failed_items} |"
         )
     return "\n".join(rows)

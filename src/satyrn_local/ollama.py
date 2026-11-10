@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import re
 import signal
 import subprocess
 import time
@@ -200,3 +201,24 @@ def unload(pins: Pins, model: str, timeout: float = 300) -> None:
         if time.monotonic() > deadline:
             raise SystemExit(f"{model} is still loaded {timeout:.0f}s after asking Ollama to unload it")
         time.sleep(1)
+
+
+_PROMPT_TIMING = re.compile(r"task (\d+) \| prompt eval time =\s+([\d.]+) ms /\s+(\d+) tokens")
+_GENERATE_TIMING = re.compile(r"task (\d+) \|\s+eval time =\s+([\d.]+) ms /\s+(\d+) tokens")
+
+
+def request_timings(log_text: str) -> list[dict[str, float]]:
+    """Per-request timings from the server log: tokens read and written, and the seconds for each.
+
+    "read" is prompt processing (only the tokens not already in Ollama's cache), "write" is
+    generation. Present when the server was started with `start` (its log is .runtime/ollama.log).
+    """
+    requests: list[dict[str, float]] = []
+    for line in log_text.splitlines():
+        if match := _PROMPT_TIMING.search(line):
+            requests.append(
+                {"read_tokens": int(match[3]), "read_s": float(match[2]) / 1000, "write_tokens": 0, "write_s": 0.0}
+            )
+        elif (match := _GENERATE_TIMING.search(line)) and requests:
+            requests[-1].update(write_tokens=int(match[3]), write_s=float(match[2]) / 1000)
+    return requests

@@ -19,10 +19,11 @@ therefore create and edit files through ``exec_command``, as config/instructions
 from __future__ import annotations
 
 import json
+import os
 import tomllib
 from pathlib import Path
 
-from .layout import Layout, Pins
+from .layout import IS_WINDOWS, Layout, Pins
 
 # Fields every catalog entry needs (the interpreter rejects entries without them), with values
 # that suit a local model. Per-model values from config/models.toml are applied on top.
@@ -67,18 +68,31 @@ def catalog_entry(name: str, settings: dict, instructions: str, context_window: 
     return entry
 
 
-def write_catalog(layout: Layout, pins: Pins) -> Path:
-    """(Re)write the model catalog; cheap, so commands call it before every interpreter run."""
-    instructions = (layout.root / "config" / "instructions.md").read_text(encoding="utf-8")
+def shell_name() -> str:
+    """The shell the interpreter runs commands in, for the instructions (@SHELL@)."""
+    return "PowerShell" if IS_WINDOWS else Path(os.environ.get("SHELL") or "/bin/sh").name
+
+
+def write_catalog(
+    layout: Layout, pins: Pins, instructions_file: Path | None = None, target: Path | None = None
+) -> Path:
+    """(Re)write the model catalog; cheap, so commands call it before every interpreter run.
+
+    ``instructions_file`` and ``target`` let `bench` try other instructions without touching
+    the catalog that `interpreter` uses.
+    """
+    source = instructions_file or layout.root / "config" / "instructions.md"
+    instructions = source.read_text(encoding="utf-8").replace("@SHELL@", shell_name())
     models = load_models(layout)
     catalog = {
         "models": [catalog_entry(name, s, instructions, pins.context_length) for name, s in models.items()],
     }
-    layout.interpreter_home.mkdir(parents=True, exist_ok=True)
+    target = target or layout.catalog
+    target.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(catalog, indent=2) + "\n"
-    if not layout.catalog.is_file() or layout.catalog.read_text(encoding="utf-8") != text:
-        layout.catalog.write_text(text, encoding="utf-8")
-    return layout.catalog
+    if not target.is_file() or target.read_text(encoding="utf-8") != text:
+        target.write_text(text, encoding="utf-8")
+    return target
 
 
 def known_models(layout: Layout) -> list[str]:

@@ -1,83 +1,31 @@
 # Generate code
 
-Start the model server first (`python3.14 satyrn.py start`), then use Open Interpreter in one
-of two ways. In both, the model works in one folder: it can read and write files there and
-run programs, so give it a folder for this purpose, not your home directory.
+The model works in one folder: it can read and write files there and run programs. Give it a
+folder for this purpose, not your home directory. `satyrn code` creates the folder if needed.
+If the model server is not running, it asks whether to start it.
 
 ## Talk to it
 
 ```bash
-mkdir -p ~/ai-code
-python3.14 satyrn.py interpreter --oss -C ~/ai-code
+satyrn code ~/ai-code
 ```
 
-`--oss` selects the local model, `-C` the folder to work in. Type a request and press
-{kbd}`Enter`. The interpreter shows each command the model runs and its output, and may ask for
-your approval first. You can ask for changes in the same conversation. {kbd}`Ctrl+C` leaves.
+Type a request and press {kbd}`Enter`. The interpreter shows each command the model runs and
+its output, and may ask for your approval first. You can ask for changes in the same
+conversation. {kbd}`Ctrl+C` leaves. Without a folder, `satyrn code` works in the current one.
 
 ## One request, no conversation
 
-`interpreter exec` runs a single request to the end and prints the model's answer. This is
-handy in scripts, and it is how this project's tests and benchmarks drive the model:
-
 ```bash
-python3.14 satyrn.py interpreter exec --oss --skip-git-repo-check -s workspace-write -C ~/ai-code \
-  "Write fizzbuzz.py that prints FizzBuzz for 1 to 15. Run it and tell me the output."
+satyrn code ~/ai-code -p "Write fizzbuzz.py that prints FizzBuzz for 1 to 15. Run it and tell me the output."
 ```
 
-`-s workspace-write`
-: Lets the model write files in the `-C` folder (and temporary folders), nowhere else.
+With `-p`, the model works on the request until it is done, prints its answer and exits. This
+is handy in scripts; it is also how this project's tests and benchmarks drive the model. The
+model may write files only in the folder (and in temporary folders).
 
-`--skip-git-repo-check`
-: Allows folders that are not git repositories.
-
-`-m MODEL`
-: Uses another model for this request, for example `-m qwen3.6:35b-a3b`.
-
-## Type `interpreter` instead of `python3.14 satyrn.py interpreter`
-
-`setup` creates small launchers. Put them on your `PATH` for the current terminal, and
-`interpreter` and `ollama` run the project's copies with the project's settings:
-
-::::{tab-set}
-
-:::{tab-item} bash / zsh
-:sync: posix
-
-```bash
-source .runtime/activate
-cd ~/ai-code
-interpreter --oss
-```
-
-:::
-
-:::{tab-item} PowerShell
-:sync: windows
-
-```powershell
-. .runtime\activate.ps1
-cd $HOME\ai-code
-interpreter --oss
-```
-
-:::
-
-:::{tab-item} cmd.exe
-
-```bat
-.runtime\activate.bat
-cd %USERPROFILE%\ai-code
-interpreter --oss
-```
-
-:::
-
-::::
-
-Without `-C`, the model works in the current folder. The interpreter keeps its settings and
-history in `.runtime/interpreter-home`, so an Open Interpreter you may have installed before is
-not touched.
+Both forms accept `-m MODEL` to use another model than your default for this one time, for
+example `-m qwen3.6:35b-a3b`.
 
 ## Write good requests
 
@@ -91,10 +39,24 @@ The model only knows what you tell it and what it finds in the folder.
 The model is told to check its work by running it and to finish with a short summary of what
 it changed. See [How it works](how-it-works.md) for everything it is told.
 
+## Use Open Interpreter directly
+
+`satyrn interpreter …` runs the project's copy of Open Interpreter with the project's settings
+and passes every argument on, so all of its own options are available:
+
+```bash
+satyrn interpreter --oss -C ~/ai-code             # what `satyrn code ~/ai-code` runs
+satyrn interpreter exec --help                     # its non-interactive mode
+```
+
+The interpreter keeps its settings and history in `.runtime/interpreter-home`, so an Open
+Interpreter you may have installed before is not touched. `satyrn ollama …` does the same for
+Ollama's command line, for example `satyrn ollama list`.
+
 ## Stop
 
 ```bash
-python3.14 satyrn.py stop
+satyrn stop
 ```
 
 The model stays in memory for 30 minutes after its last request, then Ollama frees the memory

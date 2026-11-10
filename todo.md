@@ -123,6 +123,19 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       installed, `prepare-ai-repository` ran (.claude/, .codex/, AGENTS.md, assistant guidelines)
 - [x] Make the README mostly empty and point to the docs. → the Satyrn projects table moved to docs/projects.md
 
+- [ ] Find instructions that make the models solve tasks faster; check with the fastest model
+      (gpt-oss:20b) whether code execution gets faster.
+- [ ] Measure how long the models take to read the context before the instruction.
+- [ ] Install a `satyrn` command so the docs do not need `python3.14 satyrn.py`. Name: `satyrn-agent`
+      or `satyrn-cli`? → `satyrn-agent` is the engine package of the satyrn-ai org; `satyrn-cli` is
+      free on PyPI (`satyrn` there is an unrelated SAT solver): package `satyrn-cli`, command `satyrn`.
+- [ ] Clone, install, then just run `satyrn`: it guides you through the steps that still need doing.
+- [ ] `satyrn` evaluates which models can run on this computer and lists all models so people can
+      make a good choice.
+- [ ] The installation also installs auto-completion for the shell.
+  - [x] Docs first: quick start, Set up (install, guide, steps by hand, completion, uninstall),
+        Generate code (`satyrn code`), Choose a model (`satyrn models`, `use`, context reading times), Reference.
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`

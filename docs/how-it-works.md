@@ -8,8 +8,8 @@
             ▼
          your folder (-C)
 
- satyrn.py: downloads and verifies both tools, writes their settings,
-            starts and stops Ollama, runs checks and benchmarks
+ satyrn:    downloads and verifies both tools, rates and downloads models,
+            writes their settings, starts and stops Ollama, runs checks and benchmarks
 ```
 
 Open Interpreter
@@ -21,9 +21,10 @@ Ollama
 : Runs the model on your CPU or GPU and offers it on `127.0.0.1:11434` through an
   OpenAI-compatible API. `--oss` tells Open Interpreter to use it.
 
-`satyrn.py`
+`satyrn`
 : Pure Python with no dependencies outside the standard library, so it works the same on Linux,
-  macOS and Windows. Everything it creates goes into `.runtime/`.
+  macOS and Windows. `satyrn.py install` links the `satyrn` command to the cloned folder;
+  everything it downloads or creates goes into that folder's `.runtime/`.
 
 ## What the model is told
 
@@ -63,7 +64,7 @@ rejects (`tool apply_patch invoked with incompatible payload`). The models write
 shell instead.
 
 Changes to `config/models.toml` and `config/instructions.md` apply the next time you start the
-interpreter. Changes to `config/interpreter.toml` need `python3.14 satyrn.py setup` again.
+interpreter. Changes to `config/interpreter.toml` need `satyrn setup` again.
 
 ## Runs that cannot finish
 
@@ -79,7 +80,7 @@ When you talk to the interpreter yourself, you are the time limit: {kbd}`Ctrl+C`
 
 ```text
 satyrn-getting-started/
-  satyrn.py                   the only entry point
+  satyrn.py                   entry point; `satyrn.py install` adds the `satyrn` command
   pins.toml                   versions, download checksums, model digests, port, context window
   config/                     instructions and settings for the interpreter
   src/satyrn_local/           the Python code behind satyrn.py
@@ -89,6 +90,7 @@ satyrn-getting-started/
     models/                   model files
     home/                     Ollama's home folder (its key pair), instead of ~/.ollama
     interpreter-home/         interpreter settings, model catalog, conversations, logs
+    settings.toml             your choices, for example the model from `satyrn use`
     bin/  activate*           launchers for `interpreter` and `ollama`
     ollama.pid  ollama.log    the server started with `start`
     checks/  bench/           files and results of `check` and `bench`
