@@ -28,6 +28,28 @@ Type a request and press {kbd}`Enter`. The interpreter shows each command the mo
 its output, and may ask for your approval first. You can ask for changes in the same
 conversation. {kbd}`Ctrl+C` leaves. Without a folder, `satyrn code` works in the current one.
 
+## Example: hello world
+
+A real session with `gpt-oss:20b` on a laptop CPU without GPU (Intel i7-13700H), recorded with
+`docs/example/record.py`. The animation on the [front page](index.md) shows its important
+moments; here is all of it as text, starting after `satyrn code ~/ai-code` and the trust
+question:
+
+```{literalinclude} example/hello-world.txt
+:language: text
+```
+
+The model worked for 4 minutes 23 seconds, longer than [usual](models.md#benchmark), for two
+reasons that Ollama's log shows: it was the first request after the model was loaded, so the
+model read the whole context first, and the interactive interface sent a second request of its
+own at the same moment, which the CPU worked on first. `codex resume` is wording inherited
+from Codex; with satyrn, a session continues with `satyrn interpreter resume ID`.
+
+The recording, with everything shown and its timing, is
+{download}`hello-world.cast <example/hello-world.cast>` in
+[asciicast](https://docs.asciinema.org/manual/asciicast/v2/) format; `asciinema play` replays it.
+`uv run docs/example/record.py` records a new session (the model server must be running).
+
 ## One request, no conversation
 
 ```bash

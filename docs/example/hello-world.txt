@@ -1,0 +1,38 @@
+╭──────────────────────────────────────────────────╮
+│ >_ Open Interpreter (v0.0.60)                    │
+│                                                  │
+│ model:     ollama gpt-oss:20b   /model to change │
+│ directory: ~/ai-code                             │
+╰──────────────────────────────────────────────────╯
+
+  Tip: Use /fork to branch the current chat into a new thread.
+
+
+› Create hello.py that prints Hello, World! Then run it.
+
+
+• Ran cat > hello.py <<'EOF'
+  │ print("Hello, World!")
+  │ EOF
+  └ (no output)
+
+• Ran python3 hello.py
+  └ Hello, World!
+
+• Created hello.py:
+
+  print("Hello, World!")
+
+  Executed it with python3 hello.py, producing:
+
+  Hello, World!
+
+  Worked for 4m 23s · 19:43
+Token usage: total=1,475 input=1,279 (+ 3,450 cached) output=196
+To continue this session, run:
+  codex resume 01a1c6f8-9de8-7572-b6bc-5f1d92680551
+$ ^C
+$ python3 ai-code/hello.py
+Hello, World!
+$ exit
+exit

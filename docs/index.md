@@ -50,10 +50,13 @@ satyrn code ~/ai-code
 
 Type what you want, for example:
 
-> Create a Python program sqrt.py that prints the square root of the number given as its
-> first argument, and run it with 2.
+> Create hello.py that prints Hello, World! Then run it.
 
-The model writes the file into `~/ai-code`, runs it and tells you what it did. When you are
+![The important moments of a real session: satyrn code ~/ai-code, the folder trust question, the request, the model writing hello.py with a shell command and running it, its answer, and python3 ai-code/hello.py printing Hello, World! in the shell.](example/hello-world.gif)
+
+The model writes the file into `~/ai-code`, runs it and tells you what it did. The animation
+shows the important moments of a real session; see
+[the whole session as text](generate.md#example-hello-world). When you are
 done, leave with {kbd}`Ctrl+C` and stop the server with `satyrn stop`. Nothing starts by
 itself, and everything the tools download stays in the `satyrn-getting-started` folder.
 

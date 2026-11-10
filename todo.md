@@ -223,10 +223,27 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [ ] Decide: warm the model up after `satyrn start` (read the fixed context once), so the first task
         is as fast as later ones.
 
-- [ ] An example run in the docs that asks for hello world, as an animated GIF and as text/HTML.
+- [x] An example run in the docs that asks for hello world, as an animated GIF and as text/HTML. → a real
+      session recorded by `docs/example/record.py` (pseudo-terminal, real model); asciicast, GIF, text
+  - [x] The animation should be short (10 s) with only the important content changes. → 9 key screens
+  - [x] The animation goes on the front page. → quick start; the full text on Generate code
 
 - [x] Where is the link to the models in the docs? → page "Choose a model" (sidebar "Use it", linked from the
       front page); it did not link the models themselves: the benchmark table now links each to ollama.com/library
+
+- [x] Evaluate whether https://pi.dev is a better harness than Open Interpreter. → from docs and source (install
+      was blocked by the permission system): not clearly better; similar context size to the tuned Open
+      Interpreter (~4-5 KB vs 3.5-7.1 KB), better tools for local models (JSON `write`/`edit`, Chat
+      Completions), but no sandbox and no approvals, needs Node.js/npm, fast-moving.
+- [x] How can pi and Open Interpreter be compared? → same machine, server, model builds, tasks, prompts and
+      checks; only the harness changes; measured with `satyrn bench` (answered in the chat)
+  - [ ] If the user agrees: `satyrn bench --harness pi` and a pinned pi install for the comparison.
+
+- [ ] pi as a second harness: `satyrn setup` installs pi too and lets the user choose the default (pi is the
+      default); `satyrn interpreter` = Open Interpreter, `satyrn pi` = pi; `satyrn code` uses the default,
+      `--pi` / `--open-interpreter` override it. The context files are named per harness, and the model
+      calls itself Satyrn.
+- [ ] Can the model be told to put a line break after each sentence, and does that work in Open Interpreter?
 
 ## Follow-ups found along the way
 
