@@ -17,7 +17,7 @@ Ollama 0.40.15 and `gpt-oss:20b` with a 32k context, unless a section says other
 | 3 | pi sends a smaller context than Open Interpreter | measuring | — |
 | 4 | Ollama's batch size or thread count leave CPU speed unused | **no:** batch size within ±5 %; fewer threads are slower | Ollama's defaults stay |
 | 5 | Flash attention or a compressed context cache read faster | measuring | — |
-| 6 | Open Interpreter's interactive mode sends an extra request that delays the first answer | measuring | — |
+| 6 | Open Interpreter's interactive mode sends an extra request that delays the first answer | **confirmed:** a task-title request, up to ~1.5 min | pi (the default) does not send it; no setting turns it off in Open Interpreter |
 | 7 | Less reasoning gets to the first action sooner | **no** for whole tasks: low effort took 2:45 vs 2:08 ([benchmark](models.md#benchmark)) | — |
 
 ## 1. Loading the model
@@ -54,3 +54,18 @@ the time you send your first request, Ollama has the model loaded and the agent'
 context in its cache, so it only reads your request. Your conversation sees nothing of the
 warm-up. `satyrn code --no-warmup` turns it off; `-p` requests skip it, as they are the first
 request themselves.
+
+## 6. Open Interpreter's extra title request
+
+In a conversation, Open Interpreter names the task on screen. For that it sends a second
+request to the model at the same moment as your first one: "Generate a concise, single-line task
+title of at most 36 characters …", with the same 2.6 KB of instructions and medium reasoning.
+Ollama on a CPU works on one request at a time, so your request can wait for the title: in the
+recorded [hello-world session](generate.md#example-hello-world), the title took about 1.5 of
+the 4.4 minutes. Found by recording the requests of the interactive mode
+(`tui/src/app/thread_routing.rs` and `thread_title.rs` in Open Interpreter: a title is made
+whenever a conversation without a name gets its first message).
+
+There is no setting to turn it off. pi, satyrn's default coding agent, does not send such a
+request: it names a session only when you do. Open Interpreter's single requests
+(`satyrn code -p`) do not send it either.
