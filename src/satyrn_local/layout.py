@@ -124,6 +124,16 @@ class Layout:
         return self.interpreter_home / "models.json"
 
     @property
+    def settings(self) -> Path:
+        """The user's choices, for example the model from `satyrn use`."""
+        return self.runtime / "settings.toml"
+
+    @property
+    def install_record(self) -> Path:
+        """What `install` put outside this folder, so that `uninstall` can remove it."""
+        return self.runtime / "installed.json"
+
+    @property
     def bench(self) -> Path:
         return self.runtime / "bench"
 
@@ -143,12 +153,10 @@ class Layout:
         for candidate in (self.ollama_dir / "bin" / f"ollama{EXE}", self.ollama_dir / f"ollama{EXE}"):
             if candidate.is_file():
                 return candidate
-        raise SystemExit(f"Ollama is not installed in {self.ollama_dir}; run: python satyrn.py setup")
+        raise SystemExit(f"Ollama is not installed in {self.ollama_dir}; run: satyrn setup")
 
     def interpreter_exe(self) -> Path:
         candidate = self.interpreter_dir / "bin" / f"interpreter{EXE}"
         if not candidate.is_file():
-            raise SystemExit(
-                f"Open Interpreter is not installed in {self.interpreter_dir}; run: python satyrn.py setup"
-            )
+            raise SystemExit(f"Open Interpreter is not installed in {self.interpreter_dir}; run: satyrn setup")
         return candidate

@@ -232,10 +232,12 @@ dev = [
 ]
 
 [[package]]
-name = "satyrn-codegen"
+name = "satyrn-cli"
 version = "0.1.0"
 source = { editable = "." }
-dependencies = [
+
+[package.optional-dependencies]
+engine = [
     { name = "ds4py" },
     { name = "satyrn-agent" },
 ]
@@ -245,19 +247,22 @@ dev = [
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "satyrn-cli", extra = ["engine"] },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "ds4py", git = "https://github.com/rochecompaan/ds4-py.git?rev=5c98c6ac86cafef56780c3bcbb87c3ecaef52aef" },
-    { name = "satyrn-agent", editable = "../satyrn-agent" },
+    { name = "ds4py", marker = "extra == 'engine'", git = "https://github.com/rochecompaan/ds4-py.git?rev=5c98c6ac86cafef56780c3bcbb87c3ecaef52aef" },
+    { name = "satyrn-agent", marker = "extra == 'engine'", editable = "../satyrn-agent" },
 ]
+provides-extras = ["engine"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "pre-commit", specifier = ">=4.7.0" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = "==0.17.4" },
+    { name = "satyrn-cli", extras = ["engine"] },
 ]
 
 [[package]]

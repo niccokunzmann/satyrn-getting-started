@@ -63,7 +63,11 @@ py -3.14 satyrn.py install
   folder: it runs the code here, and everything it downloads goes into this folder's
   `.runtime/`.
 - It installs tab completion for your shell (bash, zsh, fish or PowerShell), so
-  {kbd}`Tab` completes commands, options and model names. Open a new terminal to use it.
+  {kbd}`Tab` completes commands, options, model names and folders. Open a new terminal to use
+  it. For bash it goes where the bash-completion package finds it
+  (`~/.local/share/bash-completion/completions/satyrn`); for zsh and PowerShell, `install` adds
+  marked lines to `~/.zshrc` or your PowerShell profile, which `uninstall` removes again.
+  Completion is tested with bash; the zsh, fish and PowerShell versions are not tested yet.
 
 If your shell reports `satyrn: command not found`, the folder with uv's or pipx's commands is
 not on your `PATH` yet. `uv tool update-shell` or `pipx ensurepath` adds it.
@@ -80,14 +84,15 @@ $ satyrn
 Local code generation: what is ready
 
   [ ] tools    Ollama 0.40.15 and Open Interpreter 0.0.60 are not downloaded yet
-  [ ] model    no model downloaded yet
+  [ ] model    gpt-oss:20b is not downloaded yet
   [ ] server   not running
 
 Download and verify Ollama and Open Interpreter now (about 4 GB)? [Y/n]
 ```
 
-It continues with the models that fit this computer (see [Choose a model](models.md)), asks
-which one to download, and offers to start the model server. When everything is ready, it
+It continues with the models rated for this computer (see [Choose a model](models.md)), asks
+which one to download (press {kbd}`Enter` for the recommended one, or type its number or name),
+and offers to start the model server. When everything is ready, it
 shows how to start working. Run `satyrn` again at any time to see where things stand; it only
 asks about steps that are still missing.
 

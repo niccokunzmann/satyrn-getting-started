@@ -10,11 +10,11 @@ shows the same list when you have no model yet and recommends one.
 $ satyrn models
 This computer: 40 GB memory, 72 GB free disk, 10 CPU cores, no GPU
 
-  Model              Download  Memory  This computer  Small program*  Passed*
-  gpt-oss:20b          14 GB    14 GB  fits            2:08           6/6   recommended
-  qwen3.6:35b-a3b      23 GB    25 GB  fits            3:40           6/6
-  qwen3-coder:30b      19 GB    20 GB  fits            4:04           4/6
-  qwen3.8:27b          18 GB    18 GB  fits, slow     11:55           6/6
+  #  Model              Download  Memory  This computer    Small program*  Passed*
+  1  gpt-oss:20b          14 GB   14 GB  fits                 2:08       6/6    recommended
+  2  qwen3.6:35b-a3b      23 GB   22 GB  fits                 3:40       6/6
+  3  qwen3.8:27b          18 GB   18 GB  fits, slow          11:55       6/6
+  4  qwen3-coder:30b      19 GB   22 GB  fits                 4:04       4/6
 
   * on an Intel i7-13700H laptop CPU without GPU: median time to write and check sqrt.py,
     and the runs that passed in two benchmark rounds
@@ -34,7 +34,9 @@ This computer
   without a suitable GPU. With an NVIDIA GPU that has enough memory, Ollama runs the model on
   the GPU, which is much faster than the times shown.
 
-The recommended model is the most reliable fast one that fits. To download and use a model:
+The list is sorted by how reliable and fast the models were. The recommended model is the
+first one that fits without being slow; the guide offers it as the default answer. The last
+column also marks models you have downloaded and your default. To download and use a model:
 
 ```bash
 satyrn pull qwen3.6:35b-a3b    # download it; its digest is checked against pins.toml
@@ -99,6 +101,34 @@ This is the cost of the *first* request after a model was loaded. Ollama keeps w
 in a cache, so later requests in the same conversation only read what is new, and a new
 conversation reuses the part of the context that has not changed while the model is still in
 memory (30 minutes after the last request).
+
+### What makes it faster
+
+Measured with `gpt-oss:20b` and `satyrn bench`, three runs per row: the current context, and a
+lean one (a 0.8 KB system prompt instead of 2.6 KB, without the environment block and the
+sandbox note), each with a freshly loaded model and with the model still loaded from the run
+before (`--warm`):
+
+| Context | Model | Context read | Total time (median) |
+| --- | --- | ---: | ---: |
+| current, 7.1 KB | freshly loaded | 1,675 tokens in 88 s | 2:33 |
+| current, 7.1 KB | still loaded | 495 new tokens in 21 s | 1:00 |
+| lean, 3.5 KB | freshly loaded | 870 tokens in 39 s | 1:48 |
+| lean, 3.5 KB | still loaded | 124 new tokens in 6 s | 1:07 |
+
+- **Keep the model loaded.** Once Ollama has read the context, later tasks only read what is
+  new, and a task takes about a minute. The first task after `satyrn start` (or after 30
+  idle minutes) pays the full reading time.
+- **A shorter context halves the reading time** of that first task, about 50 seconds here.
+  The 2.5 KB of tool definitions are fixed by Open Interpreter and cannot be shortened.
+- **Once loaded, writing dominates:** about 45 seconds of a one-minute task is the model
+  generating its reasoning, the command and its answer. Low reasoning effort did not help.
+- With the lean instructions, the model ran its program to check it in half of the runs,
+  which adds a step; the current instructions rarely led to that for this task.
+
+One run with the current context took 6:13 and one lean run 3:05, both while other work ran on
+the same computer; the medians are not affected much. The lean variant is in
+`experiments/instructions/lean.md`; making a compact context the default is the next step.
 
 ## Benchmark your own computer
 

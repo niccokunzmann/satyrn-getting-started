@@ -120,7 +120,7 @@ def start(layout: Layout, pins: Pins) -> None:
     layout.pidfile.write_text(f"{proc.pid}\n")
     wait_up(pins)
     print(f"Ollama started (pid {proc.pid}) on 127.0.0.1:{pins.port}; log: {layout.logfile}")
-    print("stop it with: python satyrn.py stop")
+    print("stop it with: satyrn stop")
 
 
 def stop(layout: Layout, pins: Pins) -> None:

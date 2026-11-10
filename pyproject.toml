@@ -3,27 +3,41 @@ build-backend = "uv_build"
 requires = [ "uv-build>=0.12.22,<0.14.0" ]
 
 [project]
-name = "satyrn-codegen"
+name = "satyrn-cli"
 version = "0.1.0"
-description = "Natural-language code generation CLI on top of satyrn-agent (ds4 + DFlash)"
+description = "Generate code with a local model: Open Interpreter + Ollama, pinned and reproducible"
 license = "MIT"
 license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = [
+# The `satyrn` command needs only the standard library. Install it from a clone with
+# `python3.14 satyrn.py install` (editable, so it keeps using the clone's .runtime/).
+dependencies = []
+
+[project.optional-dependencies]
+# `satyrn-codegen`, Satyrn's own engine (Apple Silicon); see docs/satyrn-engine.md.
+engine = [
   # Same pin satyrn-agent uses; must stay in lockstep with ../satyrn-agent/pyproject.toml.
   "ds4py @ git+https://github.com/rochecompaan/ds4-py.git@5c98c6ac86cafef56780c3bcbb87c3ecaef52aef",
   "satyrn-agent",
 ]
 
 [project.scripts]
-satyrn-codegen = "satyrn_codegen.cli:main"
+satyrn = "satyrn_local.cli:run"
+satyrn-codegen = "satyrn_codegen.entry:main"
+
+[tool.uv]
+# Development (tests, lint) also covers satyrn-codegen, so it installs the engine.
+default-groups = ["dev"]
+
+[tool.uv.build-backend]
+module-name = ["satyrn_local", "satyrn_codegen"]
 
 [tool.uv.sources]
 satyrn-agent = { path = "../satyrn-agent", editable = true }
 
 [dependency-groups]
-dev = [ "pre-commit>=4.7.0", "pytest>=9.1.1", "ruff==0.17.4" ]  # ruff: same version as in .pre-commit-config.yaml
+dev = [ "pre-commit>=4.7.0", "pytest>=9.1.1", "ruff==0.17.4", "satyrn-cli[engine]" ]  # ruff: as in .pre-commit-config.yaml
 
 [tool.pytest]
 ini_options.testpaths = [ "tests" ]

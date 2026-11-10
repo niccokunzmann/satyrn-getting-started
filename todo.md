@@ -125,16 +125,37 @@ Every request is recorded here as a todo, in the order it was given. The goals b
 
 - [ ] Find instructions that make the models solve tasks faster; check with the fastest model
       (gpt-oss:20b) whether code execution gets faster.
-- [ ] Measure how long the models take to read the context before the instruction.
-- [ ] Install a `satyrn` command so the docs do not need `python3.14 satyrn.py`. Name: `satyrn-agent`
+  - [x] Measured (gpt-oss:20b, 3 runs each): current context 2:33 cold / 1:00 warm; lean context
+        (0.8 KB prompt, no environment block, no sandbox note) 1:48 cold / 1:07 warm. Context read:
+        1,675 tokens in 88 s vs 870 in 39 s; warm 21 s vs 6 s. Writing dominates warm runs (~45 s).
+        Tools (2.5 KB) cannot be changed; `shell_type`/`unified_exec` switches do not change them.
+        → docs/models.md "What makes it faster"; `bench --instructions/--set/--warm`
+  - [ ] Make a compact context the default (keep the sandbox note for interactive approvals,
+        name the shell via @SHELL@, drop the environment block) and validate it with `bench`.
+- [x] Measure how long the models take to read the context before the instruction.
+      → gpt-oss:20b 73 s (1,559 tokens), qwen3.6:35b-a3b 85 s (2,760), qwen3-coder:30b 132 s
+      (3,012), qwen3.8:27b 464 s (2,886); about 40-65 % of a run; docs/models.md
+- [x] Install a `satyrn` command so the docs do not need `python3.14 satyrn.py`. Name: `satyrn-agent`
       or `satyrn-cli`? → `satyrn-agent` is the engine package of the satyrn-ai org; `satyrn-cli` is
       free on PyPI (`satyrn` there is an unrelated SAT solver): package `satyrn-cli`, command `satyrn`.
-- [ ] Clone, install, then just run `satyrn`: it guides you through the steps that still need doing.
-- [ ] `satyrn` evaluates which models can run on this computer and lists all models so people can
-      make a good choice.
-- [ ] The installation also installs auto-completion for the shell.
+- [x] Clone, install, then just run `satyrn`: it guides you through the steps that still need doing.
+      → `python3.14 satyrn.py install` (uv tool / pipx, editable: keeps using the clone's .runtime/),
+      `satyrn` = guide (asks only in a terminal; tested in a pseudo-terminal), `satyrn code DIR [-p]`
+- [x] `satyrn` evaluates which models can run on this computer and lists all models so people can
+      make a good choice. → `satyrn models`: memory/disk/GPU rating, benchmark results, ranking,
+      recommendation; `satyrn use MODEL`; memory measured with /api/ps at 32k context
+- [x] The installation also installs auto-completion for the shell. → bash (tested in real bash with
+      bash-completion), zsh, fish, PowerShell (not tested: shells not available here); `uninstall`
+      removes everything it added
+  - [ ] Test the zsh, fish and PowerShell completion on machines that have those shells.
   - [x] Docs first: quick start, Set up (install, guide, steps by hand, completion, uninstall),
         Generate code (`satyrn code`), Choose a model (`satyrn models`, `use`, context reading times), Reference.
+
+- [x] `satyrn-codegen --help` failed with `No module named 'ds4py'`: what is this? → `satyrn install`
+      also installs the package's second command, `satyrn-codegen` (Apple Silicon engine), whose
+      dependencies are the optional `engine` extra. It now explains what it needs instead of crashing
+      (lazy imports, `satyrn_codegen.entry`); the install test checks it.
+- [x] Remember: in this project, done is when the changes are live (pushed, deployed, visible).
 
 ## Follow-ups found along the way
 
