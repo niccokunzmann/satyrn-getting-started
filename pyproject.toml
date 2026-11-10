@@ -23,7 +23,7 @@ satyrn-codegen = "satyrn_codegen.cli:main"
 satyrn-agent = { path = "../satyrn-agent", editable = true }
 
 [dependency-groups]
-dev = [ "pytest>=9.1.1", "ruff>=0.17.3" ]
+dev = [ "pre-commit>=4.7.0", "pytest>=9.1.1", "ruff==0.17.4" ]  # ruff: same version as in .pre-commit-config.yaml
 
 [tool.pytest]
 ini_options.testpaths = [ "tests" ]
@@ -33,6 +33,8 @@ ini_options.markers = [ "live: sends a task through the real local model (needs 
 line-length = 120
 target-version = "py314"
 src = [ "src", "tests" ]
+# Installed and rewritten by ai-prompt-auto-commit (`make hooks`); not ours to reformat.
+extend-exclude = [ ".claude/hooks", ".codex/hooks" ]
 
 [tool.ruff.lint]
 select = [

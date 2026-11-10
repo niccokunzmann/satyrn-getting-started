@@ -1,0 +1,21 @@
+# Licensing of every file, checked by `reuse lint` (pre-commit hook). https://reuse.software
+# The last matching annotation wins, so the general rule comes first.
+version = 1
+
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Nicco Kunzmann"
+SPDX-License-Identifier = "MIT"
+
+# Installed by ai-prompt-auto-commit (`prepare-ai-repository`), which is licensed under GPL v3.
+[[annotations]]
+path = [
+  ".claude/hooks/record-prompt.py",
+  ".codex/hooks/record-prompt.py",
+  ".github/assistant-guidelines.md",
+  "AGENTS.md",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 ai-prompt-auto-commit contributors <https://github.com/pycalendar/ai-prompt-auto-commit>"
+SPDX-License-Identifier = "GPL-3.0-only"

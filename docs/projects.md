@@ -1,6 +1,7 @@
 # The Satyrn projects
 
-This project is one of several around Satyrn, a local-first coding assistant.
+This project builds on the [Satyrn](https://github.com/satyrn-ai) projects, “a human-centric
+home for Python developers to do AI Our Way”.
 
 | Repository | What it is |
 | --- | --- |

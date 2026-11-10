@@ -114,9 +114,13 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [x] Choose a license. → MIT (`LICENSE`, like the satyrn-ai repos), declared in pyproject.toml
 
 - [x] License: MIT. → `LICENSE`, pyproject.toml, README, docs footer
-- [ ] Use the REUSE project (reuse.software): every file has its license and copyright; `reuse lint` passes.
-- [ ] Add a pre-commit hook for formatting, like in icalendar.
-- [ ] Install the latest ai-prompt-auto-commit.
+- [x] Use the REUSE project (reuse.software): every file has its license and copyright; `reuse lint` passes.
+      → `REUSE.toml` (MIT for the project; GPL-3.0-only for the files ai-prompt-auto-commit installs,
+      as its LICENSE has no "or later" statement), `LICENSES/`; `reuse` pre-commit hook
+- [x] Add a pre-commit hook for formatting, like in icalendar. → `.pre-commit-config.yaml`: ruff check
+      + format (v0.17.4, same as pyproject), debug-statements, REUSE; `make hooks`
+- [x] Install the latest ai-prompt-auto-commit. → v0.1.0 (icalendar is on v0.0.10); git hooks
+      installed, `prepare-ai-repository` ran (.claude/, .codex/, AGENTS.md, assistant guidelines)
 - [x] Make the README mostly empty and point to the docs. → the Satyrn projects table moved to docs/projects.md
 
 ## Follow-ups found along the way

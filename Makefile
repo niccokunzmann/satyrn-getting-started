@@ -12,11 +12,12 @@
 #   make lint        ruff check + format check  | make format: apply ruff format and safe fixes
 #   make install     install the satyrn-codegen CLI globally with pipx
 #   make docs        build the documentation site into build/docs
+#   make hooks       install the git hooks (ruff, REUSE, AI prompts in commit messages)
 
 PY    ?= $(shell command -v python3.14 2>/dev/null || echo "uv run --no-project --python 3.14")
 SATYRN = $(PY) satyrn.py
 
-.PHONY: help setup verify serve start stop status oss check bench test test-live lint format docs dev wheels install reinstall uninstall clean
+.PHONY: help setup verify serve start stop status oss check bench test test-live lint format docs hooks dev wheels install reinstall uninstall clean
 
 help:
 	@sed -n 's/^#   //p' Makefile
@@ -33,6 +34,11 @@ bench:  ; $(SATYRN) bench
 
 dev:
 	uv sync
+
+# Once per clone. The second step sets up AI prompt recording (ai-prompt-auto-commit).
+hooks: dev
+	uv run pre-commit install
+	uv run pre-commit run --hook-stage manual prepare-ai-repository || true
 
 test: dev
 	uv run pytest -q -m "not live"

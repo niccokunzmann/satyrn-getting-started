@@ -5,6 +5,7 @@ Development uses [uv](https://docs.astral.sh/uv/) and needs
 `satyrn-codegen` (the [Apple Silicon path](satyrn-engine.md)) depends on it.
 
 ```bash
+make hooks       # once per clone: git hooks for formatting, licensing and AI prompts
 make test        # tests that need no model; no mocks: real archives, real interpreter
 make test-live   # the square-root test through the real model (start the server first)
 make lint        # ruff check and ruff format --check
@@ -16,6 +17,21 @@ The tests never mock the model. The live tests send their task through the real 
 the program it wrote. `make test` checks the generated interpreter settings with the real
 pinned interpreter, which rejects unknown keys, and tests the time limit with real stuck
 processes.
+
+## Git hooks
+
+`make hooks` installs [pre-commit](https://pre-commit.com/) hooks, configured in
+`.pre-commit-config.yaml` as in [icalendar](https://github.com/collective/icalendar):
+
+- [ruff](https://docs.astral.sh/ruff/) checks and formats the Python code, and
+  `debug-statements` stops forgotten breakpoints.
+- [REUSE](https://reuse.software/) checks that every file states its copyright and license.
+  `REUSE.toml` assigns them: MIT for this project, GPL-3.0 for the files that
+  ai-prompt-auto-commit installs. The license texts are in `LICENSES/`.
+- [ai-prompt-auto-commit](https://github.com/pycalendar/ai-prompt-auto-commit) records the
+  prompts you give Claude Code or Codex in `.prompts/` and appends them to the next commit
+  message, so the history shows which AI requests shaped the code. `make hooks` also runs its
+  one-time repository setup (`.claude/`, `.codex/`, `AGENTS.md`).
 
 ## The documentation
 
