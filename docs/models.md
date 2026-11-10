@@ -63,16 +63,16 @@ Every model got the same task as `check`: *create `sqrt.py` that prints the squa
 its argument*. The generated program was then run with 16, 2 and 0.25. Three runs per model,
 each with the model freshly loaded and nothing else in memory.
 
-Measured on Debian 13 with an Intel i7-13700H (10 cores available), no GPU, 32k context,
+Each model name links to its page in the Ollama library. Measured on Debian 13 with an Intel i7-13700H (10 cores available), no GPU, 32k context,
 Ollama 0.40.15 and Open Interpreter 0.0.60:
 
 | Model | Kind, size | Passed | Median time | Range | Read / write speed (tokens/s) |
 | --- | --- | --- | ---: | --- | ---: |
-| `gpt-oss:20b` (default) | MoE, 13 GB | 3/3 | 2:08 | 1:33–2:25 | 20 / 5.3 |
-| `gpt-oss:20b`, low reasoning effort | MoE, 13 GB | 3/3 | 2:45 | 1:54–3:56 | 20 / 5.3 |
-| `qwen3.6:35b-a3b` | MoE, 22 GB | 3/3 | 3:40 | 3:12–3:49 | 33 / 3.3 |
-| `qwen3-coder:30b` | MoE, 18 GB | 2/3 | 4:04 | 3:59–4:09 | 22 / 4.3 |
-| `qwen3.8:27b` (base model of [Satyrn's engine](satyrn-engine.md)) | dense, 17 GB | 3/3 | 11:55 | 11:45–19:32 | 6.2 / 1.6 |
+| [`gpt-oss:20b`](https://ollama.com/library/gpt-oss:20b) (default) | MoE, 13 GB | 3/3 | 2:08 | 1:33–2:25 | 20 / 5.3 |
+| [`gpt-oss:20b`](https://ollama.com/library/gpt-oss:20b), low reasoning effort | MoE, 13 GB | 3/3 | 2:45 | 1:54–3:56 | 20 / 5.3 |
+| [`qwen3.6:35b-a3b`](https://ollama.com/library/qwen3.6:35b-a3b) | MoE, 22 GB | 3/3 | 3:40 | 3:12–3:49 | 33 / 3.3 |
+| [`qwen3-coder:30b`](https://ollama.com/library/qwen3-coder:30b) | MoE, 18 GB | 2/3 | 4:04 | 3:59–4:09 | 22 / 4.3 |
+| [`qwen3.8:27b`](https://ollama.com/library/qwen3.8:27b) (base model of [Satyrn's engine](satyrn-engine.md)) | dense, 17 GB | 3/3 | 11:55 | 11:45–19:32 | 6.2 / 1.6 |
 
 Times are minutes:seconds for passing runs, without the 15–55 s it takes to load a model.
 Read speed is how fast the model processes the prompt, write speed how fast it generates;

@@ -223,6 +223,11 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [ ] Decide: warm the model up after `satyrn start` (read the fixed context once), so the first task
         is as fast as later ones.
 
+- [ ] An example run in the docs that asks for hello world, as an animated GIF and as text/HTML.
+
+- [x] Where is the link to the models in the docs? → page "Choose a model" (sidebar "Use it", linked from the
+      front page); it did not link the models themselves: the benchmark table now links each to ollama.com/library
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`
