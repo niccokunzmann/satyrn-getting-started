@@ -128,3 +128,21 @@ def by_number(found: list[Choice], answer: str) -> str:
             raise SystemExit(f"there is no model number {answer}; see `satyrn models`")
         return found[int(answer) - 1].model
     return answer
+
+
+ADD_A_MODEL = "https://niccokunzmann.github.io/satyrn-getting-started/models.html#add-a-model-that-is-not-listed"
+
+
+def listed(found: list[Choice], answer: str) -> str:
+    """The listed model meant by ``answer`` (a name, or a row number of `satyrn models`).
+
+    Only listed models can be used: Open Interpreter gets instructions and settings for them.
+    """
+    model = by_number(found, answer)
+    if model not in {choice.model for choice in found}:
+        rows = "\n".join(f"  {number}  {choice.model}" for number, choice in enumerate(found, 1))
+        raise SystemExit(
+            f"{model} is not a listed model. Choose one of these (details: satyrn models):\n{rows}\n"
+            f"To add another model, see {ADD_A_MODEL}"
+        )
+    return model

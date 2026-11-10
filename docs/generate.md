@@ -10,6 +10,18 @@ If the model server is not running, it asks whether to start it.
 satyrn code ~/ai-code
 ```
 
+The first time you use a folder, Open Interpreter asks whether you trust it, because settings
+inside a folder can run code. Choose *1. Trust and continue* for a folder of your own; the answer
+is remembered. Its screens still say "Codex" in places, as in that question and in the hint
+*Ask Codex to do anything*: Open Interpreter is based on OpenAI's Codex CLI. The header shows
+what actually runs:
+
+```text
+>_ Open Interpreter (v0.0.60)
+model:     ollama gpt-oss:20b
+directory: /home/you/ai-code
+```
+
 Type a request and press {kbd}`Enter`. The interpreter shows each command the model runs and
 its output, and may ask for your approval first. You can ask for changes in the same
 conversation. {kbd}`Ctrl+C` leaves. Without a folder, `satyrn code` works in the current one.
@@ -25,7 +37,9 @@ is handy in scripts; it is also how this project's tests and benchmarks drive th
 model may write files only in the folder (and in temporary folders).
 
 Both forms accept `-m MODEL` to use another model than your default for this one time, for
-example `-m qwen3.6:35b-a3b`.
+example `-m qwen3.6:35b-a3b` or its number, `-m 2`. Only the models that `satyrn models` lists
+can be used: Open Interpreter needs instructions and settings for each model, and those exist
+only for the listed ones. See [Add a model that is not listed](models.md#add-a-model-that-is-not-listed).
 
 ## Write good requests
 

@@ -167,6 +167,16 @@ def test_select_by_number(project: Path) -> None:
     assert out.stdout.splitlines()[-1] == f"{chosen} is your default model"
 
 
+def test_only_listed_models_can_be_used(project: Path) -> None:
+    for args in (["use", "llama3:8b"], ["code", str(project / "work"), "-m", "llama3:8b"], ["use", "7"]):
+        out = satyrn(project, *args)
+        assert out.returncode != 0
+        assert "Choose one of these" in out.stderr or "no model number 7" in out.stderr
+        assert "gpt-oss:20b" in out.stderr or "no model number 7" in out.stderr
+    assert not (project / "work").exists(), "nothing may be created for an unlisted model"
+    assert not (project / ".runtime" / "settings.toml").exists()
+
+
 def test_table_says_when_nothing_fits(project: Path) -> None:
     layout, pins = Layout(project), Pins.load(project / "pins.toml")
     tiny = Machine(8, 2, 2, None, 0)

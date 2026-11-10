@@ -155,7 +155,8 @@ above, including how long the model took to read the context. Results are kept i
 
 ## Add a model that is not listed
 
-Open Interpreter has to be told how to work with each model. To add one from the
+`satyrn code` and `satyrn use` accept only the listed models, because Open Interpreter has to be
+told how to work with each model. To add one from the
 [Ollama library](https://ollama.com/library):
 
 1. `satyrn pull NAME:TAG`. It prints the line to add to `[model.digests]` in

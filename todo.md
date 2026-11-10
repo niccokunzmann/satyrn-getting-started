@@ -160,6 +160,15 @@ Every request is recorded here as a todo, in the order it was given. The goals b
 - [x] `satyrn models` should say how to select a model. → "How to select a model" with the
       recommended model as the example (pull, use, `code -m`); `satyrn use NUMBER` selects by row
 
+- [x] "`satyrn code` executes codex; the arguments do not seem to be passed." → it runs the pinned
+      Open Interpreter (`ps` shows `.runtime/interpreter/bin/interpreter --oss -m gpt-oss:20b -C DIR`);
+      its header shows `model: ollama gpt-oss:20b` and the folder. The trust question and the hint
+      "Ask Codex to do anything" are Codex wording compiled into Open Interpreter (a Codex fork).
+      → explained in docs/generate.md; its "1 warning" (an unfinished feature it enables itself) is
+      silenced with `suppress_unstable_features_warning`.
+- [x] `satyrn code` can only use a model that is listed. → `code -m` and `use` accept only listed
+      models, by name or number; anything else gets the list and the docs link, nothing is changed
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`

@@ -10,6 +10,10 @@ oss_provider = "ollama"     # `interpreter --oss` needs no provider picker
 # Reproducibility: stay on the version pinned in pins.toml.
 check_for_update_on_startup = false
 
+# The interactive interface turns on an unfinished feature of its own
+# (default_mode_request_user_input) and warns about it; its tool is off below anyway.
+suppress_unstable_features_warning = true
+
 # How to drive the local models: system prompt (config/instructions.md) and context window for
 # every model in config/models.toml.
 model_catalog_json = @CATALOG@

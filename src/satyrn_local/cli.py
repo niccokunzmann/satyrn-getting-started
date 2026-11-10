@@ -196,7 +196,8 @@ def _start_if_wanted(layout: Layout, pins: Pins) -> None:
 def cmd_code(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     """Open Interpreter on the local model in a folder: a conversation, or one request (-p)."""
     folder = Path(args.dir).expanduser().resolve()
-    model = args.model or settings.default_model(layout, pins)
+    found = modelinfo.choices(layout, pins, machine.detect(layout.runtime))
+    model = modelinfo.listed(found, args.model or settings.default_model(layout, pins))
     exe = layout.interpreter_exe()
     if not settings.is_pulled(layout, model):
         raise SystemExit(f"{model} is not downloaded yet: satyrn pull {model}  (or run `satyrn` to be guided)")
@@ -219,10 +220,7 @@ def cmd_models(layout: Layout, pins: Pins, _args: argparse.Namespace) -> int:
 
 
 def cmd_use(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
-    if args.model.isdigit():
-        args.model = modelinfo.by_number(modelinfo.choices(layout, pins, machine.detect(layout.runtime)), args.model)
-    if args.model not in agentconfig.known_models(layout):
-        print(f"note: {args.model} is not in config/models.toml, so Open Interpreter has no instructions for it")
+    args.model = modelinfo.listed(modelinfo.choices(layout, pins, machine.detect(layout.runtime)), args.model)
     if not settings.is_pulled(layout, args.model):
         print(f"note: {args.model} is not downloaded yet: satyrn pull {args.model}")
     settings.set_default_model(layout, args.model)
@@ -256,7 +254,7 @@ def build_parser() -> argparse.ArgumentParser:
     co = sub.add_parser("code", help="let the model work in a folder: a conversation, or one request with -p")
     co.add_argument("dir", nargs="?", default=".", help="folder to work in (default: the current one)")
     co.add_argument("-p", "--prompt", help="one request; the model works on it until done, then exits")
-    co.add_argument("-m", "--model", help="model to use instead of your default")
+    co.add_argument("-m", "--model", help="a listed model (name or number) instead of your default")
     sub.add_parser("models", help="rate the prepared models for this computer")
     u = sub.add_parser("use", help="make a model your default")
     u.add_argument("model", help="model name, or its number in `satyrn models`")
