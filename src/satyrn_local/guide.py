@@ -40,9 +40,9 @@ def ask_model(found: list[modelinfo.Choice]) -> str | None:
         answer = input(f"Which model? Number or name [{default}] ").strip() or default
     except EOFError:
         answer = default
-    if answer.isdigit() and 1 <= int(answer) <= len(found):
-        return found[int(answer) - 1].model
-    return answer or None
+    if not answer:
+        return None
+    return modelinfo.by_number(found, answer)
 
 
 def _line(name: str, text: str, *, done: bool) -> str:

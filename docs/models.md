@@ -18,6 +18,11 @@ This computer: 40 GB memory, 72 GB free disk, 10 CPU cores, no GPU
 
   * on an Intel i7-13700H laptop CPU without GPU: median time to write and check sqrt.py,
     and the runs that passed in two benchmark rounds
+
+How to select a model:
+  satyrn pull gpt-oss:20b          download it, if it is not downloaded yet
+  satyrn use gpt-oss:20b           make it your default (or by number: satyrn use 1)
+  satyrn code DIR -m gpt-oss:20b   use a model just once
 ```
 
 Download
@@ -36,11 +41,16 @@ This computer
 
 The list is sorted by how reliable and fast the models were. The recommended model is the
 first one that fits without being slow; the guide offers it as the default answer. The last
-column also marks models you have downloaded and your default. To download and use a model:
+column also marks models you have downloaded and your default.
+
+## Select a model
+
+The end of the list says how, with the recommended model as the example:
 
 ```bash
 satyrn pull qwen3.6:35b-a3b    # download it; its digest is checked against pins.toml
 satyrn use qwen3.6:35b-a3b     # make it your default for `satyrn code` and `satyrn check`
+satyrn use 2                   # the same, by its number in `satyrn models`
 satyrn code ~/ai-code -m qwen3-coder:30b   # or use another model just once
 ```
 

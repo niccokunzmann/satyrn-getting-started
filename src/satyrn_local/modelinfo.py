@@ -104,3 +104,27 @@ def table(found: list[Choice], machine: Machine) -> str:
         "    and the runs that passed in two benchmark rounds",
     ]
     return "\n".join(lines)
+
+
+def selection_help(found: list[Choice]) -> str:
+    """How to select a model, with the recommended one (else the first) as the example."""
+    example = recommended(found) or (found[0] if found else None)
+    if example is None:
+        return ""
+    number, name = found.index(example) + 1, example.model
+    commands = [
+        (f"satyrn pull {name}", "download it, if it is not downloaded yet"),
+        (f"satyrn use {name}", f"make it your default (or by number: satyrn use {number})"),
+        (f"satyrn code DIR -m {name}", "use a model just once"),
+    ]
+    width = max(len(command) for command, _ in commands) + 2
+    return "How to select a model:\n" + "\n".join(f"  {command:<{width}} {text}" for command, text in commands)
+
+
+def by_number(found: list[Choice], answer: str) -> str:
+    """A model name for a row number of the list (as shown by `satyrn models`); names pass through."""
+    if answer.isdigit():
+        if not 1 <= int(answer) <= len(found):
+            raise SystemExit(f"there is no model number {answer}; see `satyrn models`")
+        return found[int(answer) - 1].model
+    return answer

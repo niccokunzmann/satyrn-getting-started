@@ -27,7 +27,7 @@ def run_tool(exe: Path, args: list[str], env: dict[str, str]) -> int:
 
 
 # --- generated files ---------------------------------------------------------------------
-def write_interpreter_config(layout: Layout, pins: Pins) -> None:
+def write_interpreter_config(layout: Layout, pins: Pins, *, quiet: bool = False) -> None:
     template = (layout.root / "config" / "interpreter.toml").read_text(encoding="utf-8")
     catalog = agentconfig.write_catalog(layout, pins)
     target = layout.interpreter_home / "config.toml"
@@ -35,8 +35,9 @@ def write_interpreter_config(layout: Layout, pins: Pins) -> None:
     model = settings.default_model(layout, pins)
     text = template.replace("@MODEL@", model).replace("@CATALOG@", json.dumps(str(catalog)))
     target.write_text(text + _kept_projects(target), encoding="utf-8")
-    print(f"  config   {target}")
-    print(f"  models   {catalog} ({', '.join(agentconfig.known_models(layout))})")
+    if not quiet:
+        print(f"  config   {target}")
+        print(f"  models   {catalog} ({', '.join(agentconfig.known_models(layout))})")
 
 
 def _kept_projects(config: Path) -> str:
@@ -210,18 +211,23 @@ def cmd_code(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
 
 def cmd_models(layout: Layout, pins: Pins, _args: argparse.Namespace) -> int:
     here = machine.detect(layout.runtime)
-    print(modelinfo.table(modelinfo.choices(layout, pins, here), here))
+    found = modelinfo.choices(layout, pins, here)
+    print(modelinfo.table(found, here))
+    print()
+    print(modelinfo.selection_help(found))
     return 0
 
 
 def cmd_use(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
+    if args.model.isdigit():
+        args.model = modelinfo.by_number(modelinfo.choices(layout, pins, machine.detect(layout.runtime)), args.model)
     if args.model not in agentconfig.known_models(layout):
         print(f"note: {args.model} is not in config/models.toml, so Open Interpreter has no instructions for it")
     if not settings.is_pulled(layout, args.model):
         print(f"note: {args.model} is not downloaded yet: satyrn pull {args.model}")
     settings.set_default_model(layout, args.model)
     if (layout.interpreter_home / "config.toml").is_file():
-        write_interpreter_config(layout, pins)
+        write_interpreter_config(layout, pins, quiet=True)
     print(f"{args.model} is your default model")
     return 0
 
@@ -253,7 +259,7 @@ def build_parser() -> argparse.ArgumentParser:
     co.add_argument("-m", "--model", help="model to use instead of your default")
     sub.add_parser("models", help="rate the prepared models for this computer")
     u = sub.add_parser("use", help="make a model your default")
-    u.add_argument("model")
+    u.add_argument("model", help="model name, or its number in `satyrn models`")
     cp = sub.add_parser("completion", help="print the tab-completion script for a shell")
     cp.add_argument("shell", choices=completion.SHELLS)
     s = sub.add_parser("setup", help="download + verify Ollama and Open Interpreter, write config, pull the model")

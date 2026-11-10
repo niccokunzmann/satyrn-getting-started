@@ -146,6 +146,27 @@ def test_models_command_shows_every_model(project: Path) -> None:
         assert model in out.stdout
 
 
+def test_models_command_says_how_to_select(project: Path) -> None:
+    out = satyrn(project, "models")
+    assert "How to select a model:" in out.stdout
+    assert "satyrn use " in out.stdout
+    assert "satyrn pull " in out.stdout
+
+
+def test_select_by_number(project: Path) -> None:
+    layout, pins = Layout(project), Pins.load(project / "pins.toml")
+    found = modelinfo.choices(layout, pins, Machine(64, 500, 16, None, 0))
+    assert modelinfo.by_number(found, "1") == found[0].model
+    assert modelinfo.by_number(found, "qwen3.8:27b") == "qwen3.8:27b"
+    with pytest.raises(SystemExit, match="no model number 9"):
+        modelinfo.by_number(found, "9")
+    out = satyrn(project, "use", "2")
+    assert out.returncode == 0, out.stderr
+    chosen = settings.default_model(layout, pins)
+    assert chosen in MODELS
+    assert out.stdout.splitlines()[-1] == f"{chosen} is your default model"
+
+
 def test_table_says_when_nothing_fits(project: Path) -> None:
     layout, pins = Layout(project), Pins.load(project / "pins.toml")
     tiny = Machine(8, 2, 2, None, 0)

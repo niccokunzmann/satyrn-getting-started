@@ -157,6 +157,9 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       (lazy imports, `satyrn_codegen.entry`); the install test checks it.
 - [x] Remember: in this project, done is when the changes are live (pushed, deployed, visible).
 
+- [x] `satyrn models` should say how to select a model. → "How to select a model" with the
+      recommended model as the example (pull, use, `code -m`); `satyrn use NUMBER` selects by row
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`

@@ -12,7 +12,7 @@ Without the installed command, write `python3.14 satyrn.py COMMAND` in the proje
 | `uninstall` | Remove the command and the tab completion. The folder stays. |
 | `code [DIR] [-p REQUEST] [-m MODEL]` | Work with the model in `DIR` (default: the current folder): a conversation, or one request with `-p`. |
 | `models` | Rate every prepared model for this computer, with benchmark results. |
-| `use MODEL` | Make `MODEL` your default. |
+| `use MODEL` | Make `MODEL` your default; `MODEL` can also be its number in `satyrn models`. |
 | `setup [--model M] [--no-model]` | Download, verify and unpack Ollama and Open Interpreter, write their settings, download the default model (or `M`). |
 | `pull MODEL` | Download a model and compare its digest with `pins.toml`. |
 | `start` / `stop` | Start the Ollama server in the background / stop it. |
