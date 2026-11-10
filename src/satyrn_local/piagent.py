@@ -100,10 +100,12 @@ def install(layout: Layout, pins: Pins) -> None:
 def write_config(layout: Layout, pins: Pins) -> None:
     """pi's model list, settings and system prompt; cheap, so it is rewritten before every start."""
     layout.pi_home.mkdir(parents=True, exist_ok=True)
-    models = [
-        {"id": name, "name": name, "contextWindow": pins.context_length, "maxTokens": 8192}
-        for name in agentconfig.known_models(layout)
-    ]
+    models = []
+    for name, info in agentconfig.load_models(layout).items():
+        model = {"id": name, "name": name, "contextWindow": pins.context_length, "maxTokens": 8192}
+        if info.get("reasoning_efforts"):  # pi then passes its thinking level on as reasoning_effort
+            model |= {"reasoning": True, "compat": {"supportsReasoningEffort": True}}
+        models.append(model)
     providers = {
         PROVIDER: {
             "name": "Ollama on this computer",

@@ -36,6 +36,8 @@ def test_pi_settings_list_every_model_and_carry_the_satyrn_context(project: Path
     assert provider["baseUrl"] == f"http://127.0.0.1:{PINS.port}/v1"
     assert [m["id"] for m in provider["models"]] == agentconfig.known_models(layout)
     assert {m["contextWindow"] for m in provider["models"]} == {PINS.context_length}
+    reasoning = {m["id"] for m in provider["models"] if m.get("reasoning")}
+    assert reasoning == {"gpt-oss:20b"}, "only models with reasoning efforts in config/models.toml"
     assert json.loads((layout.pi_home / "settings.json").read_text())["enableInstallTelemetry"] is False
     system = (layout.pi_home / "SYSTEM.md").read_text()
     assert system == (project / "config" / "context" / "pi.md").read_text()

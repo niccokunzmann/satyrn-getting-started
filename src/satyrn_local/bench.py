@@ -180,6 +180,8 @@ def agent_command(
     if variant.harness == "pi":
         piagent.write_config(layout, pins)
         args = ["--mode", "json", "--model", piagent.model_ref(model), "--no-session"]
+        if variant.effort:
+            args += ["--thinking", variant.effort]
         if variant.instructions:
             args += ["--system-prompt", variant.instructions.read_text(encoding="utf-8")]
         return piagent.command(layout, [*args, prompt]), piagent.env(layout, pins), work
