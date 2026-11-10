@@ -10,6 +10,7 @@ question it asks has a default, so you can press {kbd}`Enter` throughout.
 | Computer | 64-bit Linux, macOS or Windows | Tested on Debian 13 (Linux). The scripts support macOS and Windows, but those have not been tested yet. |
 | Memory | 16 GB RAM | For the smallest benchmarked model. `satyrn models` shows which models fit your computer. |
 | Disk | 20 GB free | 13–23 GB per model, about 4 GB for the tools and their downloads. |
+| Node.js | not needed | satyrn downloads its own Node.js for pi into the project folder. |
 | Processor | any recent x86-64 or ARM CPU | No GPU needed. Ollama uses a supported GPU automatically. |
 | Software | `git`, Python 3.14, and uv or pipx | uv can also provide Python 3.14, see below. |
 | Network | while downloading | The tools are about 4 GB, a model 13–23 GB. |
@@ -89,14 +90,16 @@ Run `satyrn` without a command. It shows what is ready and offers the next step:
 $ satyrn
 Local code generation: what is ready
 
-  [ ] tools    Ollama 0.40.15 and Open Interpreter 0.0.60 are not downloaded yet
+  [ ] tools    Ollama 0.40.15, Open Interpreter 0.0.60 and pi 1.5.2 are not downloaded yet
   [ ] model    gpt-oss:20b is not downloaded yet
   [ ] server   not running
 
-Download and verify Ollama and Open Interpreter now (about 4 GB)? [Y/n]
+Download and verify Ollama, Open Interpreter and pi now (about 4 GB)? [Y/n]
 ```
 
-It continues with the models rated for this computer (see [Choose a model](models.md)), asks
+It then asks which coding agent `satyrn code` should use (see
+[Choose the coding agent](#choose-the-coding-agent); pi is the default) and continues with the
+models rated for this computer (see [Choose a model](models.md)), asks
 which one to download (press {kbd}`Enter` for the recommended one, or type its number or name),
 and offers to start the model server. When everything is ready, it
 shows how to start working. Run `satyrn` again at any time to see where things stand; it only
@@ -105,10 +108,33 @@ asks about steps that are still missing.
 The guide never starts anything without asking, and nothing starts automatically later: the
 model server runs only after you start it, until you stop it or restart the computer.
 
+## Choose the coding agent
+
+satyrn installs two coding agents. Both work with the same models; `satyrn code` uses your
+default, and `--pi` or `--open-interpreter` picks the other one for a single session.
+
+| | [pi](https://pi.dev) (default) | [Open Interpreter](https://github.com/openinterpreter/openinterpreter) |
+| --- | --- | --- |
+| Tools of the model | read, write and edit files, run commands | run commands (files are written with the shell) |
+| Before a command runs | nothing: pi runs every command right away | commands run in a sandbox; it may ask for approval |
+| Installed from | npm, with a pinned Node.js | one pinned binary per platform |
+
+```{warning}
+pi has no sandbox and does not ask before it runs a command: the model can do whatever your
+user account can do. Work in a folder made for this, as `satyrn code ~/ai-code` does, and use
+Open Interpreter if you want commands confined and approved.
+```
+
+To change the default, answer the guide's question again or run:
+
+```bash
+satyrn setup --harness open-interpreter   # or: --harness pi
+```
+
 ## The same steps by hand
 
 ```bash
-satyrn setup --no-model        # download and verify Ollama and Open Interpreter (about 4 GB)
+satyrn setup --no-model        # download and verify Ollama, Open Interpreter, Node.js and pi
 satyrn models                  # which models fit this computer
 satyrn pull gpt-oss:20b        # download a model
 satyrn use gpt-oss:20b         # make it the default
@@ -123,6 +149,7 @@ safe: finished steps are skipped.
 
 | Setting | Default | How to change it |
 | --- | --- | --- |
+| Coding agent | pi | `satyrn setup --harness NAME`, or `--pi` / `--open-interpreter` for one session |
 | Model | the guide's recommendation, else `gpt-oss:20b` | `satyrn use MODEL`, or `-m MODEL` for one session |
 | Folder the model works in | the folder you name, or the current one | `satyrn code DIR` |
 | Server address | `127.0.0.1:11434`, local only | `[ollama].port` in `pins.toml` |

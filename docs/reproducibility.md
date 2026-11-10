@@ -7,6 +7,8 @@ the same models, or stop with an error.
 | --- | --- |
 | Ollama 0.40.15 | download URL and SHA-256 per platform: Linux x86-64 and ARM64, Windows, macOS |
 | Open Interpreter 0.0.60 | download URL and SHA-256 per platform, including Windows and macOS on ARM |
+| Node.js 24.22.2 | download URL and SHA-256 per platform, from nodejs.org's checksum list |
+| pi 1.5.2 | `config/pi/package-lock.json`: every npm package with its version and integrity hash, installed with `npm ci --ignore-scripts` |
 | Models | manifest digest per model tag |
 | Settings | `config/` (instructions, model catalog, interpreter settings with update checks off), context window, port |
 

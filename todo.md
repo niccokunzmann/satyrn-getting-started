@@ -243,7 +243,11 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       default); `satyrn interpreter` = Open Interpreter, `satyrn pi` = pi; `satyrn code` uses the default,
       `--pi` / `--open-interpreter` override it. The context files are named per harness, and the model
       calls itself Satyrn.
-- [ ] Can the model be told to put a line break after each sentence, and does that work in Open Interpreter?
+- [x] Can the model be told to put a line break after each sentence, and does that work in Open Interpreter?
+      → yes: its renderer keeps single line breaks (`soft_break` → new line, test `paragraph_soft_break`);
+      the instruction goes into both context files; pi's rendering to be checked when pi is integrated
+
+- [x] Quick start should also mention uv. → a `uv` tab next to Linux/macOS and Windows
 
 ## Follow-ups found along the way
 

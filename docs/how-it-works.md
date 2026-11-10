@@ -26,6 +26,28 @@ Ollama
   macOS and Windows. `satyrn.py install` links the `satyrn` command to the cloned folder;
   everything it downloads or creates goes into that folder's `.runtime/`.
 
+## Two coding agents
+
+[pi](https://pi.dev) and [Open Interpreter](https://github.com/openinterpreter/openinterpreter) do
+the same job: they send your request and their tools to the model, run the tool calls it makes
+and send back the results until the model answers. satyrn installs both and gives each the
+same model, its own context and its own settings folder; `satyrn code` starts the one you chose.
+
+Each agent gets a context file written for its tools:
+
+`config/context/pi.md`
+: For pi: its tools `read`, `write`, `edit` and `bash`. satyrn installs it as pi's system prompt
+  (`SYSTEM.md` in `.runtime/pi-home`).
+
+`config/context/open-interpreter.md`
+: For Open Interpreter: its tools `exec_command` and `write_stdin`, and writing files with the
+  shell (see below).
+
+Both tell the model that it is Satyrn, a coding agent on the user's computer, and to put each
+sentence of its answers on its own line, which keeps answers readable in a terminal. pi gets its
+model list from `config/models.toml` as well (context window and reasoning settings), and its
+telemetry, update checks and session sharing are switched off.
+
 ## What the model is told
 
 Open Interpreter 0.0.60 only has settings for OpenAI's hosted models. A local model would get a
@@ -38,7 +60,7 @@ proxy between the interpreter and Ollama showed all of this.
 
 This project gives every model context written for it:
 
-`config/instructions.md`
+`config/context/open-interpreter.md`
 : The system prompt. It names the two tools that exist (`exec_command` to run a shell command,
   `write_stdin` to answer a running command), shows how to create and change files with them
   (a heredoc, a short Python replacement, PowerShell), and says how to work: look first, make
@@ -63,8 +85,8 @@ Ollama returns calls to such tools as ordinary JSON function calls, which the in
 rejects (`tool apply_patch invoked with incompatible payload`). The models write files with the
 shell instead.
 
-Changes to `config/models.toml` and `config/instructions.md` apply the next time you start the
-interpreter. Changes to `config/interpreter.toml` need `satyrn setup` again.
+Changes to `config/models.toml` and the files in `config/context/` apply the next time you start
+a coding agent. Changes to `config/interpreter.toml` need `satyrn setup` again.
 
 ## Runs that cannot finish
 
