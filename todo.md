@@ -185,6 +185,8 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [x] "It also says 'Ask codex to do anything' in the prompt" → replaced in the same patch.
   - [x] Do not publish anything to them; give the issue text and the link. → handed over in the chat.
 - [x] Never publish an issue, PR or anything without the user's consent. → saved as a memory for all sessions
+- [x] Push the Open Interpreter patch to a branch in the user's fork (consented). → `niccokunzmann/openinterpreter`
+      branch `product-name-override`; no PR, no issue
 - [x] Are there example files and prompts to test the speed of the models? Something online for really
       simple benchmarks? → answered: LocalScore, llama-bench, Ollama `--verbose`, HumanEval/MBPP
       (benchllama), Aider Polyglot; `satyrn bench` for the agent task
