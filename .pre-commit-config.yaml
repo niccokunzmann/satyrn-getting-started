@@ -17,16 +17,20 @@ repos:
     rev: v6.0.0
     hooks:
       - id: debug-statements
+        stages: [pre-commit]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.4 # also update the ruff pin in pyproject.toml
     hooks:
       - id: ruff-check
+        stages: [pre-commit]
         args: [--config, "pyproject.toml", --fix]
       - id: ruff-format
+        stages: [pre-commit]
         args: [--config, "pyproject.toml"]
 
   - repo: https://github.com/fsfe/reuse-tool
     rev: v6.3.0
     hooks:
       - id: reuse
+        stages: [pre-commit]  # not again at prepare-commit-msg / post-commit
