@@ -187,6 +187,8 @@ Every request is recorded here as a todo, in the order it was given. The goals b
 - [x] Never publish an issue, PR or anything without the user's consent. → saved as a memory for all sessions
 - [x] Push the Open Interpreter patch to a branch in the user's fork (consented). → `niccokunzmann/openinterpreter`
       branch `product-name-override`; no PR, no issue
+  - [x] Verified: `cargo test -p codex-product-info`, `cargo fmt --check`, `cargo check -p codex-tui --tests`
+        (Rust 1.95.0 in `../openinterpreter/.toolchain`, OpenSSL headers unpacked there; no system change)
 - [x] Are there example files and prompts to test the speed of the models? Something online for really
       simple benchmarks? → answered: LocalScore, llama-bench, Ollama `--verbose`, HumanEval/MBPP
       (benchllama), Aider Polyglot; `satyrn bench` for the agent task
