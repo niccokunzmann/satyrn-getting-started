@@ -25,10 +25,10 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: false
-      - run: make docs
+      - run: make html
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: build/docs
+          path: build/html
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

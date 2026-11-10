@@ -10,7 +10,8 @@ make test        # tests that need no model; no mocks: real archives, real inter
 make test-live   # the square-root test through the real model (start the server first)
 make lint        # ruff check and ruff format --check
 make format      # apply ruff's formatting and safe fixes
-make docs        # build this site into build/docs (warnings are errors)
+make html        # build this site into build/html (warnings are errors)
+make livehtml    # serve it in your browser; rebuilt and reloaded on every change
 ```
 
 The tests never mock the model. The live tests send their task through the real model and run
@@ -37,7 +38,12 @@ processes.
 
 The site is built with [Sphinx](https://www.sphinx-doc.org/), the
 [Furo](https://pradyunsg.me/furo/) theme and [MyST](https://myst-parser.readthedocs.io/)
-Markdown from the `docs/` folder. Its build requirements are pinned with hashes in
+Markdown from the `docs/` folder. `make livehtml` is the way to write it: it serves the site
+with [sphinx-autobuild](https://github.com/sphinx-doc/sphinx-autobuild) on a free port (so it
+runs next to other documentation servers), opens it in your browser, rebuilds it when a file
+changes and reloads the page; {kbd}`Ctrl+C` stops it. For a fixed address, use
+`make livehtml LIVEHTML_ARGS="--port 8001"`. `make html` is the
+strict build that CI runs. The build requirements are pinned with hashes in
 `docs/requirements.txt`; to update them, edit `docs/requirements.in` and run:
 
 ```bash

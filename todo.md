@@ -201,6 +201,12 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [ ] Optional: add small tasks (hello, sqrt, fizzbuzz) to `satyrn bench` if the user wants them.
 - [x] Still record all prompts as todos for this project and check them off. → this list, in order
 
+- [x] Add `make livehtml` and rename `make docs` to `make html`. → sphinx-autobuild (hash-pinned) on a free
+      port, opens the browser, own output folder `build/livehtml`; `make html` writes `build/html`; CI uses it
+- [x] "Somehow my change in setup.md is not covered." → it was built and served (uv tab); my test instance
+      was building into the same folder at that moment, so the open page did not reload. livehtml now has
+      its own output folder. The user's uv tab is committed.
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`

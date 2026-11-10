@@ -21,12 +21,7 @@ question it asks has a default, so you can press {kbd}`Enter` throughout.
 
 If you do not have it, either install it from [python.org](https://www.python.org/downloads/)
 or your package manager, or use [uv](https://docs.astral.sh/uv/getting-started/installation/),
-which downloads Python 3.14 into its own cache without changing your system. With uv, the
-installation command is:
-
-```bash
-uv run --no-project --python 3.14 satyrn.py install
-```
+which downloads Python 3.14 into its own cache without changing your system.
 
 ## Install the `satyrn` command
 
@@ -50,6 +45,17 @@ python3.14 satyrn.py install
 git clone https://github.com/niccokunzmann/satyrn-getting-started.git
 cd satyrn-getting-started
 py -3.14 satyrn.py install
+```
+
+:::
+
+:::{tab-item} `uv`
+:sync: uv
+
+```bash
+git clone https://github.com/niccokunzmann/satyrn-getting-started.git
+cd satyrn-getting-started
+uv run --no-project --python 3.14 satyrn.py install
 ```
 
 :::

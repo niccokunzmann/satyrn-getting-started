@@ -36,7 +36,7 @@ The Makefile is only a shortcut on systems with `make`; all logic is in `satyrn.
 | --- | --- |
 | `make setup`, `start`, `stop`, `serve`, `status`, `verify`, `check`, `bench` | `satyrn …` |
 | `make oss` | `satyrn code` |
-| `make test`, `test-live`, `lint`, `format`, `docs` | see [Contributing](contributing.md) |
+| `make test`, `test-live`, `lint`, `format`, `html`, `livehtml` | see [Contributing](contributing.md) |
 | `make install` | `python3.14 satyrn.py install` |
 | `make install-codegen` | install `satyrn-codegen` with pipx ([Satyrn's own engine](satyrn-engine.md)) |
 

@@ -12,13 +12,14 @@
 #   make lint        ruff check + format check  | make format: apply ruff format and safe fixes
 #   make install     install the `satyrn` command and tab completion | make uninstall
 #   make install-codegen  install satyrn-codegen (Apple Silicon engine) with pipx
-#   make docs        build the documentation site into build/docs
+#   make html        build the documentation site into build/html (warnings are errors)
+#   make livehtml    serve the docs in your browser, rebuilt and reloaded on every change
 #   make hooks       install the git hooks (ruff, REUSE, AI prompts in commit messages)
 
 PY    ?= $(shell command -v python3.14 2>/dev/null || echo "uv run --no-project --python 3.14")
 SATYRN = $(PY) satyrn.py
 
-.PHONY: help setup verify serve start stop status oss check bench test test-live lint format docs hooks dev wheels install uninstall install-codegen uninstall-codegen clean
+.PHONY: help setup verify serve start stop status oss check bench test test-live lint format html livehtml docs-venv hooks dev wheels install uninstall install-codegen uninstall-codegen clean
 
 help:
 	@sed -n 's/^#   //p' Makefile
@@ -58,10 +59,22 @@ format: dev
 # Separate environment with hash-pinned requirements: needs neither the project nor satyrn-agent.
 DOCS_VENV := build/docs-venv
 
-docs:
+DOCS_OUT  := build/html
+
+docs-venv:
 	uv venv -q --allow-existing --python 3.14 $(DOCS_VENV)
 	uv pip install -q --python $(DOCS_VENV) --require-hashes -r docs/requirements.txt
-	$(DOCS_VENV)/bin/sphinx-build -W --keep-going -q -b html docs build/docs
+
+html: docs-venv
+	$(DOCS_VENV)/bin/sphinx-build -W --keep-going -q -b html docs $(DOCS_OUT)
+
+# Runs until Ctrl+C. A free port (0), so it runs next to other docs servers; the browser opens it.
+# Warnings are shown but do not stop it; `make html` is the strict build.
+LIVEHTML_ARGS ?= --port 0 --open-browser
+
+# Its own output folder: it must not build into the same place as `make html` or another instance.
+livehtml: docs-venv
+	$(DOCS_VENV)/bin/sphinx-autobuild --host 127.0.0.1 $(LIVEHTML_ARGS) docs build/livehtml
 
 install:   ; $(SATYRN) install
 uninstall: ; $(SATYRN) uninstall
