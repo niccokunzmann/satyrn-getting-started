@@ -13,8 +13,10 @@ satyrn code ~/ai-code
 The first time you use a folder, Open Interpreter asks whether you trust it, because settings
 inside a folder can run code. Choose *1. Trust and continue* for a folder of your own; the answer
 is remembered. Its screens still say "Codex" in places, as in that question and in the hint
-*Ask Codex to do anything*: Open Interpreter is based on OpenAI's Codex CLI. The header shows
-what actually runs:
+*Ask Codex to do anything*: Open Interpreter is based on OpenAI's Codex CLI. `satyrn` asks it to
+call itself Satyrn (`OPEN_INTERPRETER_PRODUCT_NAME`); version 0.0.60 does not support that yet,
+and a change that adds it has been prepared for Open Interpreter. The header shows what
+actually runs:
 
 ```text
 >_ Open Interpreter (v0.0.60)

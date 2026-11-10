@@ -184,6 +184,10 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       user, nothing was published (the fork `niccokunzmann/openinterpreter` exists, unchanged).
   - [x] "It also says 'Ask codex to do anything' in the prompt" → replaced in the same patch.
   - [x] Do not publish anything to them; give the issue text and the link. → handed over in the chat.
+- [x] Pin the local installation to the patched commit, while staying easy to install? → possible only
+      with a published, prebuilt package (upstream's release workflow needs their signing secrets).
+      The user chose to wait for upstream: v0.0.60 stays pinned, nothing published. `satyrn` sets
+      `OPEN_INTERPRETER_PRODUCT_NAME=Satyrn` already (ignored by v0.0.60), so only the pin changes later.
 - [x] Never publish an issue, PR or anything without the user's consent. → saved as a memory for all sessions
 - [x] Push the Open Interpreter patch to a branch in the user's fork (consented). → `niccokunzmann/openinterpreter`
       branch `product-name-override`; no PR, no issue

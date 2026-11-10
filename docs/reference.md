@@ -64,6 +64,7 @@ The Makefile is only a shortcut on systems with `make`; all logic is in `satyrn.
 | `INTERPRETER_HOME` | `.runtime/interpreter-home` | keeps the interpreter's settings out of `~/.openinterpreter` |
 | `CODEX_OSS_BASE_URL` | `http://127.0.0.1:11434/v1` | where `--oss` finds the model server |
 | `OLLAMA_HOST` | `127.0.0.1:11434` | the server listens on this computer only |
+| `OPEN_INTERPRETER_PRODUCT_NAME` | `Satyrn` | the name Open Interpreter shows; not supported by 0.0.60 yet |
 | `OLLAMA_MODELS` | `.runtime/models` | model files stay in the project |
 | `OLLAMA_CONTEXT_LENGTH` | `32768` | context window offered to the interpreter |
 | `OLLAMA_KEEP_ALIVE` | `30m` unless you set it | how long an idle model stays in memory |

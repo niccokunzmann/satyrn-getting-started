@@ -71,6 +71,9 @@ def interpreter_env(layout: Layout, pins: Pins) -> dict[str, str]:
         INTERPRETER_HOME=str(layout.interpreter_home),  # keeps ~/.openinterpreter untouched
         CODEX_OSS_BASE_URL=f"http://127.0.0.1:{pins.port}/v1",
         OLLAMA_HOST=f"127.0.0.1:{pins.port}",
+        # The name Open Interpreter shows instead of "Codex"/"Open Interpreter". Releases up to the
+        # pinned 0.0.60 ignore it; a change that adds it was prepared for Open Interpreter.
+        OPEN_INTERPRETER_PRODUCT_NAME="Satyrn",
     )
     return env
 
