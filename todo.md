@@ -226,6 +226,7 @@ Every request is recorded here as a todo, in the order it was given. The goals b
 - [x] An example run in the docs that asks for hello world, as an animated GIF and as text/HTML. → a real
       session recorded by `docs/example/record.py` (pseudo-terminal, real model); asciicast, GIF, text
   - [x] The animation should be short (10 s) with only the important content changes. → 9 key screens
+  - [x] Frames about 5 seconds each; skip the 3rd frame ("interpreter ready"). → 8 frames, 41 s
   - [x] The animation goes on the front page. → quick start; the full text on Generate code
 
 - [x] Where is the link to the models in the docs? → page "Choose a model" (sidebar "Use it", linked from the

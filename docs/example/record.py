@@ -13,8 +13,8 @@ folder), trusts the folder, types the request, waits until the model is done, le
 Ctrl+C and runs the program the model wrote. Nothing is staged. Writes next to this script:
 
     hello-world.cast   the whole session in asciicast v2 format (output with its timing)
-    hello-world.gif    a 10-second animation of the important moments, each a real screen of
-                       the session (see KEYFRAMES)
+    hello-world.gif    an animation of the important moments, each a real screen of the
+                       session shown for about 5 seconds (see KEYFRAMES)
     hello-world.txt    the whole session as text, including what scrolled off the screen
     hello-world.json   durations of the real session, for the text in the docs
 
@@ -218,17 +218,16 @@ def program_ran_in_shell(lines: list[str]) -> bool:
 
 
 # The important moments: a screen is taken the first time its condition is true (in this order),
-# and shown for the given seconds. Together they make a 10-second animation.
+# and shown for the given seconds.
 KEYFRAMES: list[tuple[str, Callable[[list[str]], bool], float]] = [
-    ("command typed", lambda lines: "$ satyrn code ~/ai-code" in lines, 1.0),
-    ("trust question", lambda lines: any("Trust this folder" in line for line in lines), 1.3),
-    ("interpreter ready", lambda lines: any("to do anything" in line for line in lines), 0.7),
-    ("request typed", lambda lines: any(REQUEST in line for line in lines), 1.1),
-    ("model working", lambda lines: any("• esc" in line for line in lines), 0.9),
-    ("file written", lambda lines: any("Ran cat > hello.py" in line for line in lines), 0.9),
-    ("program run", lambda lines: any("└ Hello, World!" in line for line in lines), 0.9),
-    ("answer", lambda lines: any("Worked for" in line for line in lines), 1.5),
-    ("program run in the shell", program_ran_in_shell, 1.7),
+    ("command typed", lambda lines: "$ satyrn code ~/ai-code" in lines, 5),
+    ("trust question", lambda lines: any("Trust this folder" in line for line in lines), 5),
+    ("request typed", lambda lines: any(REQUEST in line for line in lines), 5),
+    ("model working", lambda lines: any("• esc" in line for line in lines), 5),
+    ("file written", lambda lines: any("Ran cat > hello.py" in line for line in lines), 5),
+    ("program run", lambda lines: any("└ Hello, World!" in line for line in lines), 5),
+    ("answer", lambda lines: any("Worked for" in line for line in lines), 5),
+    ("program run in the shell", program_ran_in_shell, 6),
 ]
 
 
