@@ -15,7 +15,7 @@ Ollama 0.40.15 and `gpt-oss:20b` with a 32k context, unless a section says other
 | 1 | Loading the model costs time on the first request | **confirmed:** 25–29 s per load | `satyrn start` loads the default model in the background (no quality effect) |
 | 2 | Reading the agent's fixed context dominates the first answer; reading it in advance helps | measuring | `satyrn code` warms up in the background (no quality effect); `--no-warmup` |
 | 3 | pi sends a smaller context than Open Interpreter | measuring | — |
-| 4 | Ollama's batch size or thread count leave CPU speed unused | batch: **no** (within ±5 %); threads: measuring | — |
+| 4 | Ollama's batch size or thread count leave CPU speed unused | **no:** batch size within ±5 %; fewer threads are slower | Ollama's defaults stay |
 | 5 | Flash attention or a compressed context cache read faster | measuring | — |
 | 6 | Open Interpreter's interactive mode sends an extra request that delays the first answer | measuring | — |
 | 7 | Less reasoning gets to the first action sooner | **no** for whole tasks: low effort took 2:45 vs 2:08 ([benchmark](models.md#benchmark)) | — |
@@ -39,9 +39,12 @@ first line each time so that Ollama's cache cannot help):
 | default: batch 1,024, 10 threads | 63.5 s |
 | batch 256 | 69.2 s |
 | batch 2,048 | 60.6 s |
+| 8 threads | 66.7 s |
+| 6 threads | 82.2 s |
 
-Batch size makes no difference beyond measuring noise, so satyrn keeps Ollama's defaults.
-Thread counts are being measured.
+Batch size makes no difference beyond measuring noise, and fewer threads are slower: Ollama
+already uses all 10 cores. So satyrn keeps Ollama's defaults. Changing these settings also
+reloads the model, which took 17–29 s each time (guess 1).
 
 ## 2. Reading the context in advance (warm-up)
 

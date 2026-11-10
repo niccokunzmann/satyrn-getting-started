@@ -270,6 +270,7 @@ Every request is recorded here as a todo, in the order it was given. The goals b
         when the model still solves the tasks reliably.
   - [ ] One speed-up at a time: measure, document in docs/speed.md, push; evaluate all at the end. An
         interruption must never leave the repository unpushed or undocumented.
+  - [ ] Continue as long as needed to make a substantial change to the speed.
 
 ## Follow-ups found along the way
 
