@@ -18,7 +18,7 @@ Ollama 0.40.15 and `gpt-oss:20b` with a 32k context, unless a section says other
 | 4 | Ollama's batch size or thread count leave CPU speed unused | **no:** batch size within ±5 %; fewer threads are slower | Ollama's defaults stay |
 | 5 | Flash attention or a compressed context cache read faster | measuring | — |
 | 6 | Open Interpreter's interactive mode sends an extra request that delays the first answer | **confirmed:** a task-title request, up to ~1.5 min | pi (the default) does not send it; no setting turns it off in Open Interpreter |
-| 7 | Less reasoning gets to the first action sooner | **no** for whole tasks: low effort took 2:45 vs 2:08 ([benchmark](models.md#benchmark)) | — |
+| 7 | Less reasoning gets to the first action sooner | **no:** low effort 0:53 vs medium 0:47 (pi, after warm-up) | medium stays (Ollama's default for `gpt-oss`) |
 
 ## 1. Loading the model
 
@@ -109,3 +109,20 @@ whenever a conversation without a name gets its first message).
 There is no setting to turn it off. pi, satyrn's default coding agent, does not send such a
 request: it names a session only when you do. Open Interpreter's single requests
 (`satyrn code -p`) do not send it either.
+
+## 7. Less reasoning
+
+`gpt-oss:20b` thinks before it acts; its reasoning effort can be low, medium (the default) or
+high. Less reasoning could mean fewer tokens to write before the first command. Measured with
+`satyrn bench gpt-oss:20b --harness pi --warmup --effort low` against the default, so that the
+context is already read and only writing counts:
+
+| Reasoning effort | Task | Written tokens | Passed |
+| --- | ---: | ---: | ---: |
+| low | 0:53, 1:17, 0:40 | 262, 553, 257 | 3/3 |
+| medium (default) | 0:49, 0:45 | 363, 323 | 2/2 |
+
+Low effort is not faster: the model sometimes writes more instead of less. Medium stays the
+default. With Open Interpreter the result was the same (2:45 low against 2:08 medium in the
+[benchmark](models.md#benchmark)). To try it anyway: `satyrn pi --thinking low` or, for Open
+Interpreter, `satyrn interpreter -c model_reasoning_effort=\"low\"`.

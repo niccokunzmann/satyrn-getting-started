@@ -272,6 +272,8 @@ Every request is recorded here as a todo, in the order it was given. The goals b
         interruption must never leave the repository unpushed or undocumented.
   - [ ] Continue as long as needed to make a substantial change to the speed.
 
+- [x] "How is it going?" → status given; results so far in docs/speed.md
+
 ## Follow-ups found along the way
 
 - [x] Make it faster (→ ~2 min for gpt-oss:20b with the model catalog, see the benchmark todo). Both runs took ~33 min; most of it is gpt-oss:20b retrying `apply_patch`
