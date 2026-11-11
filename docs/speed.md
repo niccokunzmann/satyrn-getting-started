@@ -8,6 +8,34 @@ trade-off. satyrn's defaults are the fastest settings that still give reasonable
 Measured on Debian 13 with an Intel i7-13700H (10 cores available), no GPU, 40 GB of memory,
 Ollama 0.40.15 and `gpt-oss:20b` with a 32k context, unless a section says otherwise.
 
+## Result
+
+The default way to work, a conversation with `satyrn code`, now gets its first answer much
+sooner, at the same quality (every measured run solved its task):
+
+| Conversation, model not loaded at the start | First answer |
+| --- | ---: |
+| Open Interpreter (the recorded [hello-world session](generate.md#example-hello-world)) | 4 min 23 s |
+| pi, without warm-up | 66 s |
+| pi with warm-up, satyrn's default now | 37 s |
+
+What brought it: pi as the default coding agent (a third less context, and no extra title
+request), the warm-up while you type, and loading the model at `satyrn start`. What did not
+help: Ollama's batch size and thread count, lower reasoning effort, and switching flash
+attention (it is already on). The recorded Open Interpreter session also lost time to the
+title request and to another session using the server, so the first row is not a clean
+measurement; the two pi rows are.
+
+Options that trade something else for speed:
+
+- `OLLAMA_KV_CACHE_TYPE=q8_0` with `OLLAMA_FLASH_ATTENTION=1` when starting the server: about
+  12 % faster writing, less memory for the context, but the context is stored less precisely.
+  Not tested for quality here, so it is not the default.
+- `OLLAMA_KEEP_ALIVE` (default 30 minutes): a longer time keeps the model and its cached
+  context in memory across breaks, at the cost of 14–22 GB of memory while idle.
+- A shorter system prompt for Open Interpreter (the lean variant in
+  [Choose a model](models.md#what-makes-it-faster)): faster first reading, less guidance.
+
 ## Overview
 
 | # | Guess | Result | In satyrn |
@@ -16,7 +44,7 @@ Ollama 0.40.15 and `gpt-oss:20b` with a 32k context, unless a section says other
 | 2 | Reading the agent's fixed context dominates the first answer; reading it in advance helps | **confirmed:** first task 1:27 → 0:40 with pi | `satyrn code` warms up in the background (no quality effect); `--no-warmup` |
 | 3 | pi sends a smaller context than Open Interpreter | **confirmed:** 1,103 vs 1,692 tokens | pi is the default coding agent |
 | 4 | Ollama's batch size or thread count leave CPU speed unused | **no:** batch size within ±5 %; fewer threads are slower | Ollama's defaults stay |
-| 5 | Flash attention or a compressed context cache read faster | measuring | — |
+| 5 | Flash attention or a compressed context cache read faster | flash attention: **already on**; 8-bit cache: writes ~12 % faster | option, not default (stores the context less precisely) |
 | 6 | Open Interpreter's interactive mode sends an extra request that delays the first answer | **confirmed:** a task-title request, up to ~1.5 min | pi (the default) does not send it; no setting turns it off in Open Interpreter |
 | 7 | Less reasoning gets to the first action sooner | **no:** low effort 0:53 vs medium 0:47 (pi, after warm-up) | medium stays (Ollama's default for `gpt-oss`) |
 
@@ -126,3 +154,19 @@ Low effort is not faster: the model sometimes writes more instead of less. Mediu
 default. With Open Interpreter the result was the same (2:45 low against 2:08 medium in the
 [benchmark](models.md#benchmark)). To try it anyway: `satyrn pi --thinking low` or, for Open
 Interpreter, `satyrn interpreter -c model_reasoning_effort=\"low\"`.
+
+## 5. Flash attention and a compressed context cache
+
+Server settings, measured with `experiments/prompt_speed.py --write 128 --server-env ...` on a
+temporary server, the same 1,436-token prompt, the model writing 128 tokens, two runs each:
+
+| Server setting | Reading (tokens/s) | Writing (tokens/s) |
+| --- | ---: | ---: |
+| default (flash attention "auto") | 23.5, 25.1 | 8.0, 8.2 |
+| `OLLAMA_FLASH_ATTENTION=0` | 20.7, 20.2 | 7.8, 7.4 |
+| `OLLAMA_FLASH_ATTENTION=1` | 23.4, 25.1 | 8.1, 8.2 |
+| `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0` | 23.4, 22.6 | 9.0, 9.2 |
+
+"auto" already turns flash attention on; turning it off is slower. The 8-bit context cache
+writes about 12 % faster and needs less memory, but keeps the context less precisely; it stays
+an option (see [Result](#result)).

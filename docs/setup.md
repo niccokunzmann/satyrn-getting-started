@@ -149,6 +149,8 @@ safe: finished steps are skipped.
 | Setting | Default | How to change it |
 | --- | --- | --- |
 | Coding agent | pi | `satyrn setup --harness NAME`, or `--pi` / `--open-interpreter` for one session |
+| Warm-up before the first request | on | `satyrn code --no-warmup` ([Speed](speed.md)) |
+| Model loaded at `satyrn start` | your default model | — |
 | Model | the guide's recommendation, else `gpt-oss:20b` | `satyrn use MODEL`, or `-m MODEL` for one session |
 | Folder the model works in | the folder you name, or the current one | `satyrn code DIR` |
 | Server address | `127.0.0.1:11434`, local only | `[ollama].port` in `pins.toml` |

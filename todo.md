@@ -260,17 +260,17 @@ Every request is recorded here as a todo, in the order it was given. The goals b
 
 - [x] Finish this up and publish the current state. → committed, pushed, deploy checked
 
-- [ ] Guess and check different ways to speed up the models' first responses.
-- [ ] Take an hour for A/B tests of theories about what makes the model slow; write a report into a file and
-      build the optimizations that work.
-  - [ ] Speed-ups without an effect on quality are built in; those that trade quality are documented with
+- [x] Guess and check different ways to speed up the models' first responses.
+- [x] Take an hour for A/B tests of theories about what makes the model slow; write a report into a file and
+      build the optimizations that work. → docs/speed.md; first answer 66 s → 37 s with warm-up (pi)
+  - [x] Speed-ups without an effect on quality are built in; those that trade quality are documented with
         how to use them and the trade-off.
-  - [ ] The default should be fast: the fastest configuration that still passes the tasks; the quality
+  - [x] The default should be fast: the fastest configuration that still passes the tasks; the quality
         settings are documented. But also reasonable quality: a faster setting only becomes the default
         when the model still solves the tasks reliably.
-  - [ ] One speed-up at a time: measure, document in docs/speed.md, push; evaluate all at the end. An
+  - [x] One speed-up at a time: measure, document in docs/speed.md, push; evaluate all at the end. An
         interruption must never leave the repository unpushed or undocumented.
-  - [ ] Continue as long as needed to make a substantial change to the speed.
+  - [x] Continue as long as needed to make a substantial change to the speed.
 
 - [x] "How is it going?" → status given; results so far in docs/speed.md
 

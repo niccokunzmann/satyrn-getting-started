@@ -29,7 +29,9 @@ model:     ollama gpt-oss:20b
 directory: /home/you/ai-code
 ```
 
-Type a request and press {kbd}`Enter`. The interpreter shows each command the model runs and
+While you type your first request, satyrn lets the model read the coding agent's context in
+the background, so the first answer comes sooner (see [Speed](speed.md); `--no-warmup` turns
+it off). Type a request and press {kbd}`Enter`. The interpreter shows each command the model runs and
 its output, and may ask for your approval first. You can ask for changes in the same
 conversation. {kbd}`Ctrl+C` leaves. Without a folder, `satyrn code` works in the current one.
 
