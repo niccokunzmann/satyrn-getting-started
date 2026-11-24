@@ -289,3 +289,25 @@ Every request is recorded here as a todo, in the order it was given. The goals b
 
 - [ ] Run `satyrn-codegen` (Path B) and its live test on an Apple Silicon Mac.
 - [ ] Decide whether `satyrn-agent/.venv` (created while analysing; git-ignored) should be deleted.
+- [ ] Give credit to Satyrn AI as https://satyrn.ai/ on the front page, a credits page and the footer.
+- [ ] Make the project comply with the REUSE specification, properly give all files a license.
+
+## Training data and training
+
+- [x] What does satyrn-models do (training a model on data, the CPython example), and is it present
+      locally? → fine-tuning pipeline (CPT → SFT → RL, Unsloth); the "CPython" data is the CPython
+      documentation and PEPs, not the source code; cloned locally, but the datasets are only Git LFS
+      pointers and there is no GPU (answered in the chat)
+- [x] Is GPU training required, or only faster? How to find out which graphics card there is? → the
+      Unsloth trainer needs an NVIDIA GPU; CPU training is possible in general but 10–100× slower;
+      `lspci`, `nvidia-smi`, `inxi -G` (answered in the chat)
+- [x] Could the Intel Iris Xe (Raptor Lake-P) work? → no for Unsloth; not worth it for PyTorch either
+      (answered in the chat)
+- [ ] Reproducible datasets as part of the `satyrn` command, separate from setup and running:
+  - [ ] `satyrn data` is the command for creating datasets.
+  - [ ] `satyrn data cpython` creates the example dataset (CPT from the CPython docs and PEPs).
+  - [ ] `satyrn train` is the root command for training.
+- [ ] Docs structure: after the setup, two use cases: 1. try it out, 2. create a dataset and train a
+      new model to use it (training later on a rented GPU).
+- [ ] After creating the dataset, create and run a small training; while it trains, monitor it for
+      errors and show progress and a time estimate from time to time. Part of the training process.

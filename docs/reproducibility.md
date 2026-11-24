@@ -10,6 +10,10 @@ the same models, or stop with an error.
 | Node.js 24.22.2 | download URL and SHA-256 per platform, from nodejs.org's checksum list |
 | pi 1.5.2 | `config/pi/package-lock.json`: every npm package with its version and integrity hash, installed with `npm ci --ignore-scripts` |
 | Models | manifest digest per model tag |
+| Dataset sources | git commit of satyrn-models, CPython and python/peps ([Create a dataset](data.md#how-it-is-made)) |
+| Datasets | SHA-256 of each dataset that `satyrn data` creates; a different result fails |
+| Python packages for datasets and training | `config/data/requirements.txt`, `config/train/requirements.txt`: version and SHA-256 of every package |
+| Training model | Hugging Face revision of Qwen2.5-0.5B-Instruct and the SHA-256 of each of its files |
 | Settings | `config/` (instructions, model catalog, interpreter settings with update checks off), context window, port |
 
 Each archive is downloaded into `.runtime/downloads`, checked against its SHA-256 and only then

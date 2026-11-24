@@ -21,6 +21,11 @@ Without the installed command, write `python3.14 satyrn.py COMMAND` in the proje
 | `check [--harness NAME] [--model M] [--effort E] [--timeout S]` | The model writes `sqrt.py`; the program is then run and its output checked. |
 | `bench [MODEL…] [--harness NAME] [--runs N] [--warm] [--instructions FILE] [--set KEY=VALUE] [--effort E] [--timeout S]` | Time models on the same task with a coding agent (default: yours); default: every model in `config/models.toml`, one run each. |
 | `verify` | Re-check every pinned archive, unpacked tool and downloaded model (accepted model versions pass). |
+| `data` | List the datasets `satyrn data` can create and which of them exist ([Create a dataset](data.md)). |
+| `data cpython [--python 3.14\|3.15]` | Create the example dataset `datasets/python3.15/cpt.jsonl` from pinned CPython docs and PEPs, and check it against its pinned SHA-256. |
+| `train` | Show the ways to train a model ([Train a model](train.md)). |
+| `train small [--data FILE] [--steps N] [--lr RATE] [--rank R] [--name NAME]` | Train a LoRA adapter for Qwen2.5-0.5B on the CPU; shows progress and the time remaining, saves to `training/<run>/`. |
+| `train status [RUN]` | Show the state of the newest (or the named) training run. |
 | `pi ARGS…` | Run the project's pi with the project's settings; all arguments are passed on. |
 | `interpreter ARGS…` | Run the project's Open Interpreter with the project's settings; all arguments are passed on. |
 | `ollama ARGS…` | Run the project's Ollama command line, for example `satyrn ollama list`. |
@@ -55,6 +60,10 @@ The Makefile is only a shortcut on systems with `make`; all logic is in `satyrn.
 
 `config/interpreter.toml`
 : Open Interpreter settings. After editing, run `satyrn setup` again.
+
+`config/data/requirements.txt`, `config/train/requirements.txt`
+: The Python packages for creating datasets and for the small training, each with its SHA-256.
+  Created with `uv pip compile` from the `.in` file next to them.
 
 ## Environment
 

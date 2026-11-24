@@ -81,13 +81,41 @@ checks a small program like the one above in about two minutes. A GPU is used au
 if Ollama finds one. [Choose a model](models.md) compares four models.
 ```
 
+## After the setup
+
+There are two ways to go on:
+
+**Try it out**
+: Let a model on your computer write code for you: [Generate code](generate.md), and
+  [Choose a model](models.md) that fits your computer.
+
+**Train your own model**
+: Teach a model something new, for example the new features of Python 3.15.
+  [Create a dataset](data.md) on your computer with `satyrn data`, check that training works
+  with a [small training](train.md) on the CPU with `satyrn train small`, and later train a
+  real model on a rented GPU.
+
 ```{toctree}
 :maxdepth: 2
-:caption: Use it
+:caption: Get started
 
 setup
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Try it out
+
 generate
 models
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Train your own model
+
+data
+train
 ```
 
 ```{toctree}

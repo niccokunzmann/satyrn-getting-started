@@ -116,4 +116,8 @@ satyrn-getting-started/
     bin/  activate*           launchers for `interpreter` and `ollama`
     ollama.pid  ollama.log    the server started with `start`
     checks/  bench/           files and results of `check` and `bench`
+    data/                     tools and sources for `satyrn data`: Python packages, git checkouts
+    train/                    tools and model for `satyrn train`: PyTorch, Qwen2.5-0.5B-Instruct
+  datasets/                   datasets made by `satyrn data`, for example python3.15/cpt.jsonl
+  training/                   one folder per `satyrn train` run: log, metrics, status, adapter
 ```

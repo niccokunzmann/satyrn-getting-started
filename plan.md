@@ -45,6 +45,19 @@ them. Everything needed for that lives in this one directory.
 13. **No endless runs.** A model that cannot finish must not run forever: `check` and `bench`
     stop a run after one hour, together with everything it started, and count it as failed.
 
+14. **Two uses after the setup.** The docs lead to two paths: *try it out* (generate code with a
+    local model) and *train your own model* (create a dataset, check the training, train on a
+    rented GPU).
+15. **Reproducible datasets.** `satyrn data` creates training datasets from pinned sources (git
+    commits, hashed Python packages) and checks each result against its pinned SHA-256. The
+    example is satyrn-models' CPT dataset made from the CPython docs and PEPs. It is separate
+    from `satyrn setup` and `satyrn code`: its own tools in `.runtime/data/`, nothing of it in
+    the harness setup.
+16. **Training under `satyrn train`.** `satyrn train` is the root command for training.
+    `satyrn train small` runs a small, pinned LoRA training on the CPU that checks dataset and
+    training end to end, shows progress, time remaining and loss, and stops with an error
+    when the training breaks. Real training happens later on a rented GPU.
+
 ## Non-goals
 
 - Mocked or scripted model output, in tests or demos.
