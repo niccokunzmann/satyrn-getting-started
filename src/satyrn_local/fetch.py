@@ -28,10 +28,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def download(asset: Asset, downloads: Path) -> Path:
-    """Return a verified local copy of ``asset``, downloading it only if needed."""
+def download(asset: Asset, downloads: Path, name: str | None = None) -> Path:
+    """Return a verified local copy of ``asset``, downloading it only if needed.
+
+    The copy is called ``name``, by default ``<component>-<version>-<file>``."""
     downloads.mkdir(parents=True, exist_ok=True)
-    target = downloads / f"{asset.component}-{asset.version}-{asset.file}"
+    target = downloads / (name or f"{asset.component}-{asset.version}-{asset.file}")
     if target.is_file() and sha256_file(target) == asset.sha256:
         print(f"  cached   {target.name} (sha256 ok)")
         return target

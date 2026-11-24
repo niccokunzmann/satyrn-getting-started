@@ -17,6 +17,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+# Not copied into test projects: downloads, environments and the (large) datasets and training runs.
+COPY_IGNORE = (".runtime", ".venv", "build", ".git", "__pycache__", ".prompts", "datasets", "training")
 sys.path.insert(0, str(ROOT / "src"))
 
 from satyrn_local import completion, modelinfo, settings  # noqa: E402
@@ -32,9 +34,7 @@ BASH_COMPLETION = Path("/usr/share/bash-completion/bash_completion")
 def project(tmp_path: Path) -> Path:
     """A fresh copy of the project, without .runtime/ (nothing downloaded, nothing chosen)."""
     root = tmp_path / "satyrn-getting-started"
-    shutil.copytree(
-        ROOT, root, ignore=shutil.ignore_patterns(".runtime", ".venv", "build", ".git", "__pycache__", ".prompts")
-    )
+    shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(*COPY_IGNORE))
     return root
 
 

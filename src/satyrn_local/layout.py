@@ -176,6 +176,27 @@ class Layout:
             raise SystemExit(f"Node.js is not installed in {self.node_dir}; run: satyrn setup")
         return found[0]
 
+    # --- satyrn data / satyrn train: tools of their own, separate from the coding setup -------
+    @property
+    def data_dir(self) -> Path:
+        """Python packages, git checkouts and temporary files of `satyrn data`."""
+        return self.runtime / "data"
+
+    @property
+    def train_dir(self) -> Path:
+        """Python packages, the model and temporary files of `satyrn train`."""
+        return self.runtime / "train"
+
+    @property
+    def datasets(self) -> Path:
+        """Datasets made by `satyrn data`, laid out as in satyrn-models (python3.15/cpt.jsonl)."""
+        return self.root / "datasets"
+
+    @property
+    def training(self) -> Path:
+        """One folder per `satyrn train` run."""
+        return self.root / "training"
+
     def interpreter_exe(self) -> Path:
         candidate = self.interpreter_dir / "bin" / f"interpreter{EXE}"
         if not candidate.is_file():

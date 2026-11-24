@@ -80,8 +80,12 @@ SCRIPTS = {"bash": BASH, "zsh": ZSH, "fish": FISH, "powershell": POWERSHELL}
 
 # Which values an option or a command's positional argument takes.
 MODEL_OPTIONS = {"-m", "--model"}
-VALUE_CHOICES = {"--effort": ("low", "medium", "high"), "--harness": ("pi", "open-interpreter")}
-PATH_OPTIONS = {"--instructions": FILES}
+VALUE_CHOICES = {
+    "--effort": ("low", "medium", "high"),
+    "--harness": ("pi", "open-interpreter"),
+    "--python": ("3.14", "3.15"),
+}
+PATH_OPTIONS = {"--instructions": FILES, "--data": FILES}
 POSITIONALS = {"pull": "models", "use": "models", "bench": "models", "code": DIRS, "completion": "shells"}
 PASS_THROUGH = {"pi", "interpreter", "ollama"}
 
@@ -111,6 +115,10 @@ def complete(
         sub = commands.get(command)
         if sub is None or command in PASS_THROUGH:
             return [FILES]
+        nested = _subparsers(sub)  # `satyrn data cpython`, `satyrn train small`
+        if nested and index == 2 and not current.startswith("-"):
+            return [name for name in nested if name.startswith(current)]
+        sub = nested.get(words[2], sub) if nested else sub
         if previous in MODEL_OPTIONS:
             found = models()
         elif previous in VALUE_CHOICES:

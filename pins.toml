@@ -56,3 +56,43 @@ macos-x86_64    = { file = "node-v24.22.2-darwin-x64.tar.xz",   sha256 = "696557
 # config/pi/package-lock.json, which pins every package with its integrity hash.
 [pi]
 version = "1.5.2"
+
+# --- satyrn data: datasets for training (docs/data.md) ------------------------------------
+# Python packages: config/data/requirements.txt (version and SHA-256 of each).
+# Every source is a git commit; only the listed paths are checked out.
+[data.sources.satyrn-models]
+repo = "https://github.com/satyrn-ai/satyrn-models.git"
+commit = "d2729ade884627d1c7d80644a415010227217bff"
+paths = ["/corpus_builder/src/"]
+
+[data.sources.cpython]
+repo = "https://github.com/python/cpython.git"
+commit = "d3d0fddc01ce5076e0f33008cbef6faf2ffccd14"
+paths = ["/Doc/", "/Include/patchlevel.h", "/Misc/NEWS.d/"]
+
+[data.sources.peps]
+repo = "https://github.com/python/peps.git"
+commit = "af21ad1e51fe60aaa3fa2f48392ab4cecfd5fd58"
+paths = ["/peps/*.rst"]
+
+# SHA-256 of each dataset `satyrn data cpython` makes; a different result fails.
+[data.cpython]
+"3.15" = { sha256 = "ba1524ed38a22639db0b36c8d924bd84f8f0907e97db2dd6026259f8771fefde", rows = 156 }
+"3.14" = { sha256 = "798b97943e8f82e8183ba5717adb45e7bc738592212aefb3cbd13089d55963c3", rows = 144 }
+
+# --- satyrn train small: a small LoRA training on the CPU (docs/train.md) -----------------
+# Python packages: config/train/requirements.txt (version and SHA-256 of each).
+# The model at a Hugging Face revision (a git commit), with the SHA-256 of each file.
+[train.model]
+name = "Qwen/Qwen2.5-0.5B-Instruct"   # as satyrn-models' configs/model/qwen2.5-0.5b.yaml
+revision = "7ae557604adf67be50417f59c2c2f167def9a775"
+
+[train.model.files]
+"LICENSE" = "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+"config.json" = "18e18afcaccafade98daf13a54092927904649e1dd4eba8299ab717d5d94ff45"
+"generation_config.json" = "e558847a8b4402616f1273797b015104dc266fe4b520056fca88823ba8f8ebe6"
+"merges.txt" = "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"
+"tokenizer.json" = "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+"tokenizer_config.json" = "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+"vocab.json" = "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+"model.safetensors" = "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe"

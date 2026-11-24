@@ -303,11 +303,21 @@ Every request is recorded here as a todo, in the order it was given. The goals b
       `lspci`, `nvidia-smi`, `inxi -G` (answered in the chat)
 - [x] Could the Intel Iris Xe (Raptor Lake-P) work? → no for Unsloth; not worth it for PyTorch either
       (answered in the chat)
-- [ ] Reproducible datasets as part of the `satyrn` command, separate from setup and running:
-  - [ ] `satyrn data` is the command for creating datasets.
-  - [ ] `satyrn data cpython` creates the example dataset (CPT from the CPython docs and PEPs).
-  - [ ] `satyrn train` is the root command for training.
-- [ ] Docs structure: after the setup, two use cases: 1. try it out, 2. create a dataset and train a
-      new model to use it (training later on a rented GPU).
-- [ ] After creating the dataset, create and run a small training; while it trains, monitor it for
+- [x] Reproducible datasets as part of the `satyrn` command, separate from setup and running:
+      → own venv, git checkouts and temporary files in `.runtime/data/`; nothing in `satyrn setup`
+  - [x] `satyrn data` is the command for creating datasets. → lists them and their state
+  - [x] `satyrn data cpython` creates the example dataset (CPT from the CPython docs and PEPs). →
+        satyrn-models' corpus_builder at a pinned commit, CPython/peps at pinned commits, hashed
+        Sphinx; 3.15: 156 rows, 3.14: 144 rows; built twice each, byte-identical, SHA-256 pinned
+  - [x] `satyrn train` is the root command for training. → `satyrn train`, `small`, `status`
+- [x] Docs structure: after the setup, two use cases: 1. try it out, 2. create a dataset and train a
+      new model to use it (training later on a rented GPU). → home page and navigation: Get started,
+      Try it out, Train your own model; docs/data.md, docs/train.md
+- [x] After creating the dataset, create and run a small training; while it trains, monitor it for
       errors and show progress and a time estimate from time to time. Part of the training process.
+  - [x] `satyrn train small`: LoRA on Qwen2.5-0.5B-Instruct (pinned revision and SHA-256 per file),
+        CPU PyTorch from hashed requirements; progress, time remaining, loss; validation loss before,
+        every quarter and at the end; stops on a non-finite loss; `satyrn train status`
+  - [x] Measured threads: all 13 CPUs 17.9 s/step, 8 threads 9.2 s/step → default 2/3 of the CPUs
+  - [x] A full 200-step run finished and monitored; numbers in docs/train.md → 36 min, validation
+        loss 2.145 → 2.009 → 1.963 → 1.937 → 1.930; stopping with Ctrl+C tested on the first run

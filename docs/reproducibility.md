@@ -64,3 +64,17 @@ Change a version only together with all of its checksums: download the new relea
 compute their SHA-256 (`python3.14 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" FILE`)
 and update `pins.toml`. For a model, `satyrn pull NAME:TAG` shows the new digest.
 Then run `setup`, `verify` and `check` (or `bench`) to see that everything still works.
+
+For datasets and training:
+
+- **A source of `satyrn data`** (`[data.sources.*]`): set `commit` to the new commit
+  (`git ls-remote REPO refs/heads/main` shows the newest). Then run `satyrn data cpython` for each
+  Python version: the dataset will differ, and the command prints the line with the new
+  checksum to put into `[data.cpython]`.
+- **Python packages** (`config/data/requirements.txt`, `config/train/requirements.txt`): change
+  the `.in` file next to it and run the `uv pip compile` command written at its top. Delete the
+  `.txt` file first to get the newest versions of everything, not only of what you changed. A
+  new Sphinx can change a dataset too.
+- **The training model** (`[train.model]`): set `revision` to the new Hugging Face commit and
+  the SHA-256 of each file. The large files' checksums are listed on the model's page on
+  Hugging Face (*Files*, then the file); compute the others as above.

@@ -18,8 +18,8 @@ reads text and learns to continue it):
 satyrn data cpython
 ```
 
-It takes about five minutes the first time, most of it for reading the CPython documentation,
-and writes `datasets/python3.15/cpt.jsonl`: about 160 documents, 2.6 MB of text, made from
+It takes about three minutes, most of it for reading the CPython documentation (the first time
+also a few minutes to download its tools and sources), and writes `datasets/python3.15/cpt.jsonl`: about 160 documents, 2.6 MB of text, made from
 
 - every section of the [CPython documentation](https://docs.python.org/3.15/) that says it
   changed in Python 3.15 (`versionadded`, `versionchanged`, `deprecated` … `3.15`),
@@ -83,7 +83,8 @@ The steps are those of satyrn-models'
 4. Convert everything to Markdown, one row per document (`cpt`).
 5. Compare the result with its pinned SHA-256.
 
-If the result differs from the pin, the file is kept as `cpt.jsonl.part` and the command fails.
+If the result differs from the pin, the command fails and the file stays in `.runtime/data/build/`
+instead of `datasets/`.
 That happens when something in the chain changed, for example a different version of a Python
 package. Updating a pin is described in [Reproducibility](reproducibility.md#updating-a-pin).
 

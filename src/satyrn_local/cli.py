@@ -17,6 +17,7 @@ from . import (
     agentconfig,
     bench,
     completion,
+    datasets,
     fetch,
     guide,
     install,
@@ -27,6 +28,7 @@ from . import (
     piagent,
     procs,
     settings,
+    training,
 )
 from .bench import interpreter_env
 from .layout import IS_WINDOWS, Layout, Pins, platform_key
@@ -298,6 +300,27 @@ def cmd_guide(layout: Layout, pins: Pins, _args: argparse.Namespace) -> int:
     return guide.run(layout, pins, interactive=interactive(), setup=setup, pull=pull)
 
 
+def add_training_commands(sub: argparse._SubParsersAction) -> None:
+    """`satyrn data` and `satyrn train`: separate from the coding setup (docs/data.md, docs/train.md)."""
+    d = sub.add_parser("data", help="create datasets for training, from pinned sources (see: satyrn data)")
+    dsub = d.add_subparsers(dest="dataset")
+    dc = dsub.add_parser("cpython", help="the example: what is new in Python, from the CPython docs and PEPs")
+    dc.add_argument("--python", choices=datasets.VERSIONS, default=datasets.VERSIONS[0], help="Python version")
+    tr = sub.add_parser("train", help="train a model on a dataset (see: satyrn train)")
+    tsub = tr.add_subparsers(dest="training")
+    ts = tsub.add_parser("small", help="a small LoRA training on the CPU: checks dataset and training")
+    ts.add_argument("--data", type=Path, help=f"dataset (default: {training.DEFAULT_DATA})")
+    ts.add_argument("--steps", type=int, default=training.STEPS, help=f"training steps (default {training.STEPS})")
+    ts.add_argument("--lr", type=float, default=training.LR, help=f"learning rate (default {training.LR:g})")
+    ts.add_argument("--rank", type=int, default=training.RANK, help=f"LoRA rank (default {training.RANK})")
+    ts.add_argument("--name", help="name of the run folder in training/ (default: date and time + small)")
+    ts.add_argument(
+        "--threads", type=int, default=training.THREADS, help=f"CPU threads (default {training.THREADS}: 2/3 of all)"
+    )
+    tst = tsub.add_parser("status", help="state of the newest (or the named) training run")
+    tst.add_argument("run", nargs="?", help="run folder name in training/")
+
+
 # --- entry point ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
@@ -362,10 +385,25 @@ def build_parser() -> argparse.ArgumentParser:
             default=procs.TIME_LIMIT,
             help=f"stop a run, and everything it started, after this many seconds (default {procs.TIME_LIMIT:.0f})",
         )
+    add_training_commands(sub)
     for name, what in (("pi", "pi"), ("interpreter", "Open Interpreter"), ("ollama", "Ollama CLI")):
         t = sub.add_parser(name, help=f"run the pinned {what} with project settings", add_help=False)
         t.add_argument("args", nargs=argparse.REMAINDER)
     return p
+
+
+def cmd_data(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
+    if args.dataset == "cpython":
+        return datasets.build_cpython(layout, pins, args.python)
+    return datasets.show(layout, pins)
+
+
+def cmd_train(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
+    if args.training == "small":
+        return training.small(layout, pins, args)
+    if args.training == "status":
+        return training.status(layout, args.run)
+    return training.show(layout)
 
 
 def cmd_install(layout: Layout, _pins: Pins, args: argparse.Namespace) -> int:
@@ -399,6 +437,8 @@ HANDLERS: dict[str | None, Callable[[Layout, Pins, argparse.Namespace], int]] = 
     "pull": cmd_pull,
     "check": cmd_check,
     "bench": cmd_bench,
+    "data": cmd_data,
+    "train": cmd_train,
     "serve": _simple(ollama.serve),
     "start": _simple(ollama.start),
     "stop": _simple(ollama.stop),

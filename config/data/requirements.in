@@ -1,0 +1,9 @@
+# Python packages of `satyrn data`: what satyrn-models' corpus_builder needs for `collect-doc-changes`
+# and `cpt`. Sphinx as in CPython's Doc/requirements.txt (and corpus_builder/pyproject.toml); only
+# wheels are installed, so nothing is built from source.
+# Update requirements.txt with (see docs/reproducibility.md):
+#   uv pip compile config/data/requirements.in --universal --python-version 3.14 --generate-hashes \
+#     -o config/data/requirements.txt
+sphinx~=9.1.1
+sphinx-markdown-builder
+click

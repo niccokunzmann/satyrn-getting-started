@@ -26,7 +26,7 @@ satyrn train small
 ```
 
 The first run downloads its tools (PyTorch for the CPU and the Hugging Face libraries, about
-1 GB) and the model (1 GB) into `.runtime/train/`. All of them are pinned with their SHA-256.
+1 GB) and the model (1 GB) into `.runtime/train/`. The trained adapter is 35 MB. All of them are pinned with their SHA-256.
 
 `satyrn train small` then
 
@@ -41,7 +41,7 @@ The first run downloads its tools (PyTorch for the CPU and the Hugging Face libr
 While it trains, it shows its progress, the time it still needs and the loss:
 
 ```text
-step  40/200  20%  loss 1.92  4.1 s/step  elapsed 0:02:44  remaining ~0:10:56
+step 100/200   50%  loss 2.012  9.5 s/step  elapsed 0:16:50  remaining ~0:19:35
 ```
 
 The loss tells you how badly the model predicted the next word of the text; it should go down.
@@ -51,9 +51,18 @@ documents and not only memorized the pieces it trained on.
 At the end it prints the result:
 
 ```text
-validation loss 2.41 -> 1.87 after 200 steps (0:13:40)
-adapter: training/20261124-2130-small/adapter
+validation loss 2.145 -> 1.930 after 200 steps (0:36:03)
+adapter: training/20261124-small/adapter
 ```
+
+A whole run takes about 35 minutes on a laptop CPU (Intel i7-13700H). This is a real run with
+the defaults on the example dataset:
+
+| After step | 0 | 50 | 100 | 150 | 200 |
+| --- | --- | --- | --- | --- | --- |
+| Validation loss | 2.145 | 2.009 | 1.963 | 1.937 | 1.930 |
+
+200 steps read 0.16 of the dataset, so this shows that the training works, not a finished model.
 
 ### Watch a running training
 
@@ -93,9 +102,23 @@ The training stops with an error instead of carrying on with a broken model:
 | `--lr RATE` | 1e-4 | learning rate, as satyrn-models uses for this stage |
 | `--rank R` | 16 | LoRA rank: more extra weights with a higher rank |
 | `--name NAME` | date and time + `small` | name of the run folder in `training/` |
+| `--threads N` | two thirds of the CPUs | CPU threads for PyTorch; see [Speed](#speed) |
 
 The data order and the starting weights of the adapter come from a fixed seed, so a run is
 repeatable. Its numbers can still differ slightly on another computer.
+
+### Speed
+
+PyTorch's threads wait for each other at every step, so a single busy CPU holds all of them up.
+Using every CPU is therefore the slowest choice. Measured on the development machine
+(13 CPUs, Intel i7-13700H), one step of 512 tokens:
+
+| Threads | 4 | 6 | 8 | 12 | 13 (all) |
+| --- | --- | --- | --- | --- | --- |
+| Seconds per step | 13.8 | 10.1 | **9.2** | 9.8 | 17.9 |
+
+The default, two thirds of the CPUs, is 8 there. Leave the computer to itself while it trains:
+other work, such as building a dataset at the same time, made steps two to three times slower.
 
 ## Real training on a GPU
 
