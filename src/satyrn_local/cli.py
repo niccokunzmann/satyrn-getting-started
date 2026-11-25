@@ -178,7 +178,10 @@ def cmd_check(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     """Acceptance test: the local model, through `interpreter exec --oss`, writes a working sqrt.py."""
     if not ollama.is_up(pins):
         raise SystemExit("Ollama is not running; start it first: satyrn start")
-    model = args.model or settings.default_model(layout, pins)
+    found = modelinfo.choices(layout, pins, machine.detect(layout.runtime))
+    model = modelinfo.listed(found, args.model or settings.default_model(layout, pins))
+    if not settings.is_pulled(layout, model):
+        raise SystemExit(f"{model} is not downloaded yet: satyrn pull {model}  (or run `satyrn` to be guided)")
     variant = bench.Variant(effort=args.effort, harness=args.harness or settings.default_harness(layout))
     outcome = bench.run_sqrt(layout, pins, model, timeout=args.timeout, variant=variant)
     exit_code = "time limit" if outcome.exit_code is None else outcome.exit_code
@@ -194,7 +197,7 @@ def cmd_bench(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     """Time every model on the square-root task and print a table."""
     if not ollama.is_up(pins):
         raise SystemExit("Ollama is not running; start it first: satyrn start")
-    models = args.models or agentconfig.known_models(layout)
+    models = args.models or agentconfig.known_models(layout, trained=False)
     missing = [m for m in models if ollama.model_digest(pins, m) is None]
     if missing:
         raise SystemExit("not pulled: " + ", ".join(missing) + "\n  satyrn pull " + " ".join(missing))
@@ -319,6 +322,8 @@ def add_training_commands(sub: argparse._SubParsersAction) -> None:
     )
     tst = tsub.add_parser("status", help="state of the newest (or the named) training run")
     tst.add_argument("run", nargs="?", help="run folder name in training/")
+    te = tsub.add_parser("export", help="make a run's model usable with satyrn code -m trained:<run>")
+    te.add_argument("run", nargs="?", help="run folder name in training/ (default: the newest with an adapter)")
 
 
 # --- entry point ---------------------------------------------------------------------------
@@ -403,6 +408,8 @@ def cmd_train(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
         return training.small(layout, pins, args)
     if args.training == "status":
         return training.status(layout, args.run)
+    if args.training == "export":
+        return training.export(layout, pins, args.run)
     return training.show(layout)
 
 

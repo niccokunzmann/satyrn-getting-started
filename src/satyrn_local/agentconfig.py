@@ -23,6 +23,7 @@ import os
 import tomllib
 from pathlib import Path
 
+from . import training
 from .layout import IS_WINDOWS, Layout, Pins
 
 # Fields every catalog entry needs (the interpreter rejects entries without them), with values
@@ -40,11 +41,16 @@ BASE_ENTRY: dict = {
 }
 
 
-def load_models(layout: Layout) -> dict[str, dict]:
-    """Per-model settings from config/models.toml, with [defaults] applied."""
+def load_models(layout: Layout, *, trained: bool = True) -> dict[str, dict]:
+    """Per-model settings from config/models.toml, with [defaults] applied.
+
+    ``trained`` adds the models made with `satyrn train` that are in Ollama (trained:<run>).
+    """
     with (layout.root / "config" / "models.toml").open("rb") as handle:
         data = tomllib.load(handle)
     defaults = data.pop("defaults", {})
+    if trained:
+        data |= training.trained_models(layout)
     return {name: defaults | settings for name, settings in data.items()}
 
 
@@ -95,5 +101,5 @@ def write_catalog(
     return target
 
 
-def known_models(layout: Layout) -> list[str]:
-    return list(load_models(layout))
+def known_models(layout: Layout, *, trained: bool = True) -> list[str]:
+    return list(load_models(layout, trained=trained))

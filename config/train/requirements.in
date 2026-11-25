@@ -1,4 +1,5 @@
-# Python packages of `satyrn train small`: PyTorch for the CPU, transformers and peft (LoRA).
+# Python packages of `satyrn train small` and `satyrn train export`: PyTorch for the CPU,
+# transformers, peft (LoRA) and what llama.cpp's GGUF converter needs.
 # Update requirements.txt with (see docs/reproducibility.md):
 #   uv pip compile config/train/requirements.in --universal --python-version 3.14 --generate-hashes \
 #     --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple \
@@ -7,3 +8,4 @@ torch
 transformers
 peft
 safetensors
+sentencepiece  # llama.cpp's converter imports it before it falls back to the BPE tokenizer (satyrn train export)

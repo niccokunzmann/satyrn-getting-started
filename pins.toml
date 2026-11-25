@@ -96,3 +96,10 @@ revision = "7ae557604adf67be50417f59c2c2f167def9a775"
 "tokenizer_config.json" = "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
 "vocab.json" = "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
 "model.safetensors" = "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe"
+
+# llama.cpp's converter turns the merged model into a GGUF file, which Ollama imports
+# (satyrn train export). Only the converter and its Python package are checked out.
+[train.convert]
+repo = "https://github.com/ggml-org/llama.cpp.git"
+commit = "48ac7369600b7b760c91bd87d1527cadda9df517"
+paths = ["/convert_hf_to_gguf.py", "/conversion/", "/gguf-py/", "/LICENSE"]

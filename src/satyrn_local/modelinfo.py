@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from . import agentconfig, settings
+from . import agentconfig, settings, training
 from .layout import Layout, Pins
 from .machine import Machine
 
@@ -71,10 +71,11 @@ def _minutes(seconds: float) -> str:
 
 def table(found: list[Choice], machine: Machine) -> str:
     best = recommended(found)
+    width = max([17, *(len(choice.model) for choice in found)])
     lines = [
         f"This computer: {machine.describe()}",
         "",
-        "  #  Model              Download  Memory  This computer    Small program*  Passed*",
+        f"  #  {'Model':<{width}}  Download  Memory  This computer    Small program*  Passed*",
     ]
     for number, choice in enumerate(found, 1):
         bench = choice.info.get("benchmark", {})
@@ -89,7 +90,7 @@ def table(found: list[Choice], machine: Machine) -> str:
             if present
         ]
         lines.append(
-            f"  {number}  {choice.model:<17} {choice.info.get('download_gb', 0):>5.0f} GB"
+            f"  {number}  {choice.model:<{width}} {choice.info.get('download_gb', 0):>5.0f} GB"
             f" {choice.info.get('memory_gb', 0):>4.0f} GB  {fit:<16}"
             f" {_minutes(bench['median_s']) if 'median_s' in bench else '-':>8}"
             f"       {f'{bench["passed"]}/{bench["runs"]}' if 'runs' in bench else '-':<5}"
@@ -140,6 +141,9 @@ def listed(found: list[Choice], answer: str) -> str:
     """
     model = by_number(found, answer)
     if model not in {choice.model for choice in found}:
+        if model.startswith(training.PREFIX):
+            run = model.removeprefix(training.PREFIX)
+            raise SystemExit(f"{model} is not in Ollama yet; make it from the training run: satyrn train export {run}")
         rows = "\n".join(f"  {number}  {choice.model}" for number, choice in enumerate(found, 1))
         raise SystemExit(
             f"{model} is not a listed model. Choose one of these (details: satyrn models):\n{rows}\n"

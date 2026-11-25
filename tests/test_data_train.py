@@ -18,9 +18,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from satyrn_local import completion, datasets, gitpin, training  # noqa: E402
+from satyrn_local import agentconfig, completion, datasets, gitpin, settings, training  # noqa: E402
 from satyrn_local.cli import build_parser  # noqa: E402
-from satyrn_local.layout import Pins  # noqa: E402
+from satyrn_local.layout import Layout, Pins  # noqa: E402
 
 PINS = Pins.load(ROOT / "pins.toml")
 
@@ -181,6 +181,74 @@ def test_status_reads_the_newest_run(project: Path) -> None:
     assert "run 20261124-2130-small: finished" in out.stdout
 
 
+# --- the trained model in satyrn code ---------------------------------------------------------
+def exported(project: Path, run: str) -> str:
+    """A run whose model is in Ollama: its model.json and Ollama's manifest, as export leaves them."""
+    folder = project / "training" / run
+    folder.mkdir(parents=True)
+    name = training.model_name(run)
+    (folder / training.MODEL_FILE).write_text(f'{{"model": "{name}", "digest": "abc"}}')
+    manifest = settings.manifests(Layout(project), name)[0]  # where Ollama 0.40's `create` writes it
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("{}")
+    return name
+
+
+def test_model_name_is_a_valid_ollama_tag() -> None:
+    assert training.model_name("20261124-small") == "trained:20261124-small"
+    assert training.model_name("my run/2") == "trained:my-run-2"
+
+
+def test_modelfile_has_a_template_with_tool_calls(project: Path) -> None:
+    text = training.modelfile(Layout(project), Path("/x/model.gguf"))
+    assert text.startswith("FROM /x/model.gguf\n")
+    template = text.split('TEMPLATE """', 1)[1].split('"""', 1)[0]
+    assert ".Tools" in template
+    assert "<tool_call>" in template
+    assert ".ToolCalls" in template
+    # Ollama prints a bare {{ .Function }} as a Go struct, which the model cannot read as a tool.
+    assert "{{ json .Function }}" in template
+    assert "{{ json .Function.Arguments }}" in template
+    assert 'PARAMETER stop "<|im_end|>"' in text
+
+
+def test_exported_models_are_listed_for_the_agents(project: Path) -> None:
+    layout = Layout(project)
+    name = exported(project, "20261124-small")
+    models = agentconfig.load_models(layout)
+    assert models[name]["trained"] is True
+    assert models[name]["tool_output_tokens"] == models["gpt-oss:20b"]["tool_output_tokens"]  # defaults apply
+    assert name not in agentconfig.known_models(layout, trained=False)  # bench: only the prepared models
+    assert name in agentconfig.known_models(layout)
+
+
+def test_a_model_no_longer_in_ollama_is_not_listed(project: Path) -> None:
+    layout = Layout(project)
+    name = exported(project, "20261124-small")
+    settings.manifests(layout, name)[0].unlink()
+    assert name not in agentconfig.known_models(layout)
+
+
+def test_satyrn_use_and_models_accept_a_trained_model(project: Path) -> None:
+    name = exported(project, "20261124-small")
+    out = satyrn(project, "use", name)
+    assert out.returncode == 0, out.stderr
+    assert f"{name} is your default model" in out.stdout
+    listing = satyrn(project, "models")
+    assert re.search(rf"{re.escape(name)}\s+0 GB", listing.stdout), listing.stdout
+
+
+def test_export_needs_a_run_with_an_adapter(project: Path) -> None:
+    out = satyrn(project, "train", "export")
+    assert out.returncode != 0
+    assert "no training run with an adapter yet" in out.stderr
+    run = project / "training" / "stopped-early"
+    run.mkdir(parents=True)
+    (run / "status.json").write_text('{"state": "stopped", "steps": 200, "step": 14}')
+    out = satyrn(project, "train", "export", "stopped-early")
+    assert "run stopped-early has no adapter" in out.stderr
+
+
 # --- tab completion ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     ("words", "index", "expected"),
@@ -188,6 +256,7 @@ def test_status_reads_the_newest_run(project: Path) -> None:
         (["satyrn", "da"], 1, ["data"]),
         (["satyrn", "data", ""], 2, ["cpython"]),
         (["satyrn", "train", "s"], 2, ["small", "status"]),
+        (["satyrn", "train", "e"], 2, ["export"]),
         (["satyrn", "data", "cpython", "--python", ""], 4, ["3.14", "3.15"]),
         (["satyrn", "train", "small", "--st"], 3, ["--steps"]),
     ],

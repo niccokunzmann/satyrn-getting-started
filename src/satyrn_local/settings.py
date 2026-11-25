@@ -47,16 +47,24 @@ def set_default_model(layout: Layout, model: str) -> None:
     save(layout, load(layout) | {"model": model})
 
 
-def manifest(layout: Layout, model: str) -> Path:
-    """Where Ollama keeps the manifest of ``model`` (exists once the model is downloaded)."""
+def manifests(layout: Layout, model: str) -> list[Path]:
+    """Where Ollama keeps the manifest of ``model`` (exists once the model is downloaded or created).
+
+    Ollama 0.40 writes ``manifests-v2/ollama.com/``; models pulled before are also in the older
+    ``manifests/registry.ollama.ai/``, and models made with `ollama create` only in the new one.
+    """
     name, _, tag = model.partition(":")
     namespace, _, short = name.rpartition("/")
-    return layout.models / "manifests" / "registry.ollama.ai" / (namespace or "library") / short / (tag or "latest")
+    place = Path(namespace or "library", short, tag or "latest")
+    return [
+        layout.models / "manifests-v2" / "ollama.com" / place,
+        layout.models / "manifests" / "registry.ollama.ai" / place,
+    ]
 
 
 def is_pulled(layout: Layout, model: str) -> bool:
-    """Downloaded? Works without a running server."""
-    return manifest(layout, model).is_file()
+    """Downloaded (or made with `ollama create`)? Works without a running server."""
+    return any(path.is_file() for path in manifests(layout, model))
 
 
 def accepted_digest(layout: Layout, model: str) -> str | None:
