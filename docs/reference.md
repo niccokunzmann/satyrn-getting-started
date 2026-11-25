@@ -26,6 +26,7 @@ Without the installed command, write `python3.14 satyrn.py COMMAND` in the proje
 | `train` | Show the ways to train a model ([Train a model](train.md)). |
 | `train small [--data FILE] [--steps N] [--lr RATE] [--rank R] [--name NAME]` | Train a LoRA adapter for Qwen2.5-0.5B on the CPU; shows progress and the time remaining, saves to `training/<run>/`. |
 | `train status [RUN]` | Show the state of the newest (or the named) training run. |
+| `train export [RUN]` | Make a run's model usable with `satyrn code -m trained:<run>`: merge the adapter and import it into Ollama (also done at the end of `train small`). |
 | `pi ARGS…` | Run the project's pi with the project's settings; all arguments are passed on. |
 | `interpreter ARGS…` | Run the project's Open Interpreter with the project's settings; all arguments are passed on. |
 | `ollama ARGS…` | Run the project's Ollama command line, for example `satyrn ollama list`. |

@@ -321,3 +321,18 @@ Every request is recorded here as a todo, in the order it was given. The goals b
   - [x] Measured threads: all 13 CPUs 17.9 s/step, 8 threads 9.2 s/step → default 2/3 of the CPUs
   - [x] A full 200-step run finished and monitored; numbers in docs/train.md → 36 min, validation
         loss 2.145 → 2.009 → 1.963 → 1.937 → 1.930; stopping with Ctrl+C tested on the first run
+- [x] It should be easy to use the locally trained model with the `satyrn code` command.
+  - [x] `satyrn train export [RUN]`: merge the adapter, import into Ollama as `trained:<run>`,
+        with a tool-capable chat template; also at the end of `satyrn train small` → Ollama 0.40
+        cannot import Qwen2 safetensors ("unsupported MLX architecture"), so llama.cpp's converter
+        (pinned commit) makes a 16-bit GGUF first; the export checks Ollama's `tools` capability
+  - [x] Trained models listed in `satyrn models`, usable with `-m`, `satyrn use` and tab completion
+        → `ollama create` writes only `manifests-v2/`; `is_pulled` now checks both manifest folders
+  - [x] Try the trained model for real with `satyrn code` / `satyrn check`; result in docs/train.md
+        → first run: the template printed the tools as Go structs (`{{ .Function }}`), the model
+        looped for 20 min; with `{{ json .Function }}` it calls `write` and finishes in 60 s, but
+        writes a wrong program to /tmp: the path works, the 0.5B model is too small
+  - [x] `satyrn check` with a model that is not listed or not in Ollama: a clear error instead of
+        a run of 0 s
+- [ ] pi lets the model write outside its working folder (`/tmp/sqrt.py` in the check); decide
+      whether `satyrn code` should keep it inside the folder

@@ -57,6 +57,9 @@ them. Everything needed for that lives in this one directory.
     `satyrn train small` runs a small, pinned LoRA training on the CPU that checks dataset and
     training end to end, shows progress, time remaining and loss, and stops with an error
     when the training breaks. Real training happens later on a rented GPU.
+17. **Trained models work with `satyrn code`.** A finished training is imported into the
+    project's Ollama as `trained:<run>` and can be used like the prepared models (`-m`, `satyrn use`,
+    `satyrn models`), with a chat template that supports tool calls.
 
 ## Non-goals
 

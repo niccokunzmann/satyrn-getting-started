@@ -64,6 +64,52 @@ the defaults on the example dataset:
 
 200 steps read 0.16 of the dataset, so this shows that the training works, not a finished model.
 
+### Use the trained model with satyrn code
+
+At the end, `satyrn train small` makes the trained model ready for `satyrn code`: it adds the
+adapter to the model's own weights and imports the result into the project's Ollama as
+`trained:<run>`. Then:
+
+```bash
+satyrn code ~/ai-code -m trained:20261124-small   # use it once
+satyrn use trained:20261124-small                 # or make it your default
+satyrn models                                     # it is listed with the prepared models
+```
+
+Tab completion knows the trained models too. `satyrn train export` does the same step for an
+earlier run, or again after you deleted the model:
+
+```bash
+satyrn train export                    # the newest run with an adapter
+satyrn train export 20261124-small     # a named run
+```
+
+It needs `satyrn setup` (for Ollama) and starts a temporary model server if none is running,
+like `satyrn pull`. In Ollama the model takes 1 GB; the adapter in `training/<run>/adapter/`
+stays as it is. Remove the model again with `satyrn ollama rm trained:<run>`.
+
+How it is made:
+
+1. the adapter is merged into a copy of the pinned base model (`merge_and_unload` of peft),
+2. llama.cpp's converter, at a commit pinned in `pins.toml`, turns the merged weights into a
+   GGUF file with 16-bit weights, the format Ollama runs,
+3. Ollama imports the file with the chat template of Qwen2.5 in
+   `config/train/qwen2.5.template`, which includes tool calls,
+4. the export checks that Ollama reports the model as able to call tools; `satyrn code` needs
+   that.
+
+The intermediate files in `.runtime/train/export/` are deleted at the end.
+
+```{warning}
+The small model is for seeing the whole path work, from dataset to `satyrn code`. With half a
+billion parameters it is far too small to work as a coding agent. In `satyrn check` it called
+the `write` tool correctly and finished after a minute, but it wrote a wrong one-line program
+to `/tmp/sqrt.py` instead of its working folder and then claimed to have run it. Asked what
+PEP 750 adds, it answered in fluent English and wrongly (PEP 750 adds template strings): 200
+steps over a sixth of the dataset do not teach it the new Python. Real training of a large
+model is what makes a model that is better at new Python.
+```
+
 ### Watch a running training
 
 From another terminal:

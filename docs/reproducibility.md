@@ -14,6 +14,7 @@ the same models, or stop with an error.
 | Datasets | SHA-256 of each dataset that `satyrn data` creates; a different result fails |
 | Python packages for datasets and training | `config/data/requirements.txt`, `config/train/requirements.txt`: version and SHA-256 of every package |
 | Training model | Hugging Face revision of Qwen2.5-0.5B-Instruct and the SHA-256 of each of its files |
+| GGUF converter | git commit of llama.cpp, for `satyrn train export` ([Use the trained model](train.md#use-the-trained-model-with-satyrn-code)) |
 | Settings | `config/` (instructions, model catalog, interpreter settings with update checks off), context window, port |
 
 Each archive is downloaded into `.runtime/downloads`, checked against its SHA-256 and only then
@@ -78,3 +79,5 @@ For datasets and training:
 - **The training model** (`[train.model]`): set `revision` to the new Hugging Face commit and
   the SHA-256 of each file. The large files' checksums are listed on the model's page on
   Hugging Face (*Files*, then the file); compute the others as above.
+- **The GGUF converter** (`[train.convert]`): set `commit` to a newer llama.cpp commit
+  (`git ls-remote https://github.com/ggml-org/llama.cpp.git HEAD`) and run `satyrn train export`.

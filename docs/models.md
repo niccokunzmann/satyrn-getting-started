@@ -57,6 +57,13 @@ satyrn code ~/ai-code -m qwen3-coder:30b   # or use another model just once
 `satyrn use` stores your choice in `.runtime/`; the project's default in `pins.toml` stays
 `gpt-oss:20b`.
 
+## Models you trained
+
+A model you trained with [`satyrn train`](train.md) is added to the list as `trained:<run>`,
+for example `trained:20261124-small`, and works with `satyrn code -m`, `satyrn use` and
+`satyrn check` like the prepared models. It has no benchmark numbers until you run
+`satyrn bench trained:<run>`. See [Use the trained model](train.md#use-the-trained-model-with-satyrn-code).
+
 ## Benchmark
 
 Every model got the same task as `check`: *create `sqrt.py` that prints the square root of
