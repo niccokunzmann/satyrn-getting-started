@@ -5,6 +5,10 @@ documents are joined and cut into pieces of ``--seq-len`` tokens, about one in t
 kept back for validation, and a LoRA adapter (same target modules and alpha = 2 * rank as
 satyrn-models) learns to predict the training pieces, one piece per step.
 
+With ``--resume ADAPTER`` the run continues the training of an earlier run: it starts from that
+adapter instead of an untrained one, and ``--offset`` skips the pieces the earlier runs trained on.
+The validation pieces are the same, so the losses compare.
+
 The run reports to three files in ``--out``: train.log (what it prints), metrics.jsonl (one line
 per step and per validation) and status.json (the latest state, for `satyrn train status`). It
 stops with an error when the loss is not a finite number.
@@ -81,7 +85,7 @@ def pieces(data: Path, tokenizer: object, seq_len: int, seed: int) -> tuple[list
 
 def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - one straight training story
     import torch  # noqa: PLC0415 - heavy imports after the status says "preparing"
-    from peft import LoraConfig, get_peft_model  # noqa: PLC0415
+    from peft import LoraConfig, PeftModel, get_peft_model  # noqa: PLC0415
     from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: PLC0415
     from transformers.utils import logging as transformers_logging  # noqa: PLC0415
 
@@ -96,11 +100,22 @@ def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - o
         f"dataset: {n_docs} documents, {n_tokens:,} tokens -> {len(train_blocks)} training and "
         f"{len(valid_blocks)} validation pieces of {args.seq_len} tokens ({epochs:.2f} passes in {args.steps} steps)"
     )
+    first_piece = args.offset % len(train_blocks) + 1
+    last_piece = (args.offset + args.steps - 1) % len(train_blocks) + 1
+    report.say(f"training pieces {first_piece}-{last_piece} of {len(train_blocks)}")
     model = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.float32)
-    lora = LoraConfig(
-        r=args.rank, lora_alpha=2 * args.rank, lora_dropout=0.0, target_modules=TARGET_MODULES, task_type="CAUSAL_LM"
-    )
-    model = get_peft_model(model, lora)
+    if args.resume:
+        model = PeftModel.from_pretrained(model, args.resume, is_trainable=True)
+        report.say(f"continuing from the adapter {args.resume} ({args.steps_before} steps before)")
+    else:
+        lora = LoraConfig(
+            r=args.rank,
+            lora_alpha=2 * args.rank,
+            lora_dropout=0.0,
+            target_modules=TARGET_MODULES,
+            task_type="CAUSAL_LM",
+        )
+        model = get_peft_model(model, lora)
     trainable, total = model.get_nb_trainable_parameters()
     report.say(
         f"model: {args.model.name}, {total / 1e9:.2f} B weights, {trainable / 1e6:.1f} M of them trainable (LoRA rank "
@@ -121,11 +136,11 @@ def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - o
         return finite(sum(losses) / len(losses), "the validation loss")
 
     report.status(state="validating", step=0)
-    report.say("validating the untrained model ...")
+    report.say("validating the model before this run ..." if args.resume else "validating the untrained model ...")
     started = time.monotonic()
     first = validate()
     valid_seconds = time.monotonic() - started
-    report.say(f"validation loss before training: {first:.3f} ({valid_seconds:.0f} s)")
+    report.say(f"validation loss before this run: {first:.3f} ({valid_seconds:.0f} s)")
     report.metric(step=0, eval_loss=first)
     report.status(eval_loss_start=first, eval_loss=first)
 
@@ -136,7 +151,7 @@ def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - o
     model.train()
     for step in range(1, args.steps + 1):
         tick = time.monotonic()
-        block = torch.tensor([train_blocks[(step - 1) % len(train_blocks)]])
+        block = torch.tensor([train_blocks[(args.offset + step - 1) % len(train_blocks)]])
         loss = model(input_ids=block, labels=block).loss
         value = finite(loss.item(), f"the loss at step {step}")
         loss.backward()
@@ -152,7 +167,13 @@ def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - o
         lr = schedule.get_last_lr()[0]
         report.metric(step=step, loss=value, lr=lr, seconds=now - tick)
         report.status(
-            state="training", step=step, loss=value, seconds_per_step=per_step, elapsed=elapsed, remaining=remaining
+            state="training",
+            step=step,
+            total_steps=args.steps_before + step,
+            loss=value,
+            seconds_per_step=per_step,
+            elapsed=elapsed,
+            remaining=remaining,
         )
         if step <= 3 or step in checkpoints or now - last_print >= PRINT_EVERY:
             last_print = now
@@ -163,7 +184,7 @@ def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - o
         if step in checkpoints:
             report.status(state="validating")
             latest = validate()
-            report.say(f"validation loss {latest:.3f} (before training {first:.3f})")
+            report.say(f"validation loss {latest:.3f} (before this run {first:.3f})")
             report.metric(step=step, eval_loss=latest)
             model.save_pretrained(args.out / "adapter")
             report.status(state="training", eval_loss=latest)
@@ -185,12 +206,22 @@ def main() -> int:
     p.add_argument("--seq-len", type=int, required=True)
     p.add_argument("--seed", type=int, required=True)
     p.add_argument("--threads", type=int, required=True)
+    p.add_argument("--resume", type=Path, help="adapter of the run this one continues")
+    p.add_argument("--continues", help="name of the run this one continues")
+    p.add_argument("--offset", type=int, default=0, help="training pieces the earlier runs used")
+    p.add_argument("--steps-before", type=int, default=0, help="steps the model had before this run")
+    p.add_argument("--data-sha256", required=True)
     args = p.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     report = Report(args.out)
     settings = {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()}
     report.status(
-        state="preparing", pid=os.getpid(), steps=args.steps, started=datetime.now(UTC).isoformat(timespec="seconds")
+        state="preparing",
+        pid=os.getpid(),
+        steps=args.steps,
+        steps_before=args.steps_before,
+        continues=args.continues,
+        started=datetime.now(UTC).isoformat(timespec="seconds"),
     )
     (args.out / "config.json").write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
     report.say(f"run {args.out.name}: {args.steps} steps on {args.data.name}, settings in {args.out / 'config.json'}")

@@ -72,7 +72,47 @@ def env(layout: Layout) -> dict[str, str]:
     }
 
 
+def continuation(layout: Layout, args: argparse.Namespace) -> list[str]:
+    """Runner arguments that continue the run ``args.continue_run``: its adapter, data, rank and seed."""
+    earlier = layout.training / args.continue_run
+    adapter = earlier / "adapter"
+    if not (adapter / "adapter_config.json").is_file() or not (earlier / "config.json").is_file():
+        raise SystemExit(f"run {args.continue_run} has no adapter to continue from; see: satyrn train status")
+    config = json.loads((earlier / "config.json").read_text(encoding="utf-8"))
+    rank = json.loads((adapter / "adapter_config.json").read_text(encoding="utf-8"))["r"]
+    data = Path(config["data"])
+    for option, given, used in (("--data", args.data and args.data.resolve(), data), ("--rank", args.rank, rank)):
+        if given is not None and given != used:
+            raise SystemExit(f"{option} comes from the run that is continued ({used}); leave it out")
+    if not data.is_file():
+        raise SystemExit(f"the dataset of run {args.continue_run} is gone: {data}")
+    digest = fetch.sha256_file(data)
+    if config.get("data_sha256", digest) != digest:
+        raise SystemExit(f"{data} has changed since run {args.continue_run}; it cannot be continued on it")
+    state = json.loads((earlier / "status.json").read_text(encoding="utf-8"))
+    # The adapter is saved at each validation; a stopped run continues from its last one.
+    steps_done = state.get("step", 0) if state.get("state") == "finished" else saved_step(earlier)
+    args.data, args.rank = data, rank
+    return [
+        "--resume", str(adapter), "--continues", earlier.name,
+        "--offset", str(config.get("offset", 0) + steps_done),
+        "--steps-before", str(config.get("steps_before", 0) + steps_done),
+    ]  # fmt: skip
+
+
+def saved_step(run: Path) -> int:
+    """The step of the last saved adapter: the last validation in metrics.jsonl."""
+    step = 0
+    for line in (run / "metrics.jsonl").read_text(encoding="utf-8").splitlines():
+        entry = json.loads(line)
+        if "eval_loss" in entry:
+            step = entry["step"]
+    return step
+
+
 def small(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
+    extra = continuation(layout, args) if args.continue_run else []
+    args.rank = args.rank or RANK
     data = (args.data or layout.root / DEFAULT_DATA).resolve()
     if not data.is_file():
         raise SystemExit(f"dataset {data} not found; create it first: satyrn data cpython")
@@ -86,6 +126,7 @@ def small(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     command = [str(python), "-P", str(RUNNER), "--model", str(model), "--data", str(data), "--out", str(run)]
     command += ["--steps", str(args.steps), "--lr", str(args.lr), "--rank", str(args.rank)]
     command += ["--seq-len", str(SEQ_LEN), "--seed", str(SEED), "--threads", str(args.threads)]
+    command += ["--data-sha256", fetch.sha256_file(data), *extra]
     sys.stdout.flush()  # our lines before the trainer's, also in a log file
     process = subprocess.Popen(command, env=env(layout))
     try:
@@ -214,6 +255,8 @@ def describe(name: str, state: dict, *, alive: bool) -> list[str]:
     if phase in ACTIVE and not alive:
         phase = "ended unexpectedly (its process is gone)"
     lines = [f"run {name}: {phase}"]
+    if state.get("continues"):
+        lines.append(f"  continues {state['continues']} (the model had {state.get('steps_before', 0)} steps before)")
     steps, step = state.get("steps"), state.get("step")
     if step is not None and steps:
         loss = f", loss {state['loss']:.3f}" if "loss" in state else ""

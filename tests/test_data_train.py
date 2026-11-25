@@ -7,6 +7,8 @@ real git repositories, real files and the real command line.
 
 from __future__ import annotations
 
+import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -179,6 +181,60 @@ def test_status_reads_the_newest_run(project: Path) -> None:
     out = satyrn(project, "train", "status")
     assert out.returncode == 0
     assert "run 20261124-2130-small: finished" in out.stdout
+
+
+# --- continuing a training --------------------------------------------------------------------
+def earlier_run(project: Path, name: str, *, state: str = "finished", step: int = 200, **config: object) -> Path:
+    """A run as train_small.py leaves it: config, status, metrics and the adapter's config."""
+    data = project / "data.jsonl"
+    data.write_text('{"text": "x"}\n')
+    run = project / "training" / name
+    (run / "adapter").mkdir(parents=True)
+    (run / "adapter" / "adapter_config.json").write_text('{"r": 16}')
+    (run / "config.json").write_text(json.dumps({"data": str(data), **config}))
+    (run / "status.json").write_text(json.dumps({"state": state, "steps": 200, "step": step}))
+    metrics = [{"step": 0, "eval_loss": 2.1}, {"step": 50, "eval_loss": 2.0}, {"step": 60, "loss": 1.9}]
+    (run / "metrics.jsonl").write_text("".join(json.dumps(m) + "\n" for m in metrics))
+    return run
+
+
+def continue_args(run: str, **given: object) -> argparse.Namespace:
+    return argparse.Namespace(continue_run=run, data=given.get("data"), rank=given.get("rank"))
+
+
+def test_a_continued_run_starts_after_the_pieces_of_the_earlier_ones(project: Path) -> None:
+    earlier_run(project, "round2", offset=200, steps_before=200)  # itself the second round
+    args = continue_args("round2")
+    extra = training.continuation(Layout(project), args)
+    values = dict(zip(extra[::2], extra[1::2], strict=True))
+    assert values["--offset"] == "400"
+    assert values["--steps-before"] == "400"
+    assert values["--continues"] == "round2"
+    assert values["--resume"].endswith("round2/adapter")
+    assert args.rank == 16
+    assert args.data == project / "data.jsonl"
+
+
+def test_a_stopped_run_continues_from_its_last_saved_adapter(project: Path) -> None:
+    earlier_run(project, "stopped", state="stopped", step=60)
+    extra = training.continuation(Layout(project), continue_args("stopped"))
+    assert extra[extra.index("--offset") + 1] == "50"  # the adapter of the validation at step 50
+
+
+def test_continue_refuses_other_settings_and_a_changed_dataset(project: Path) -> None:
+    run = earlier_run(project, "r1", data_sha256="0" * 64)
+    with pytest.raises(SystemExit, match="--rank comes from the run"):
+        training.continuation(Layout(project), continue_args("r1", rank=8))
+    with pytest.raises(SystemExit, match="has changed since run r1"):
+        training.continuation(Layout(project), continue_args("r1"))
+    shutil.rmtree(run / "adapter")
+    out = satyrn(project, "train", "small", "--continue", "r1")
+    assert "run r1 has no adapter to continue from" in out.stderr
+
+
+def test_status_shows_which_run_is_continued() -> None:
+    state = {"state": "finished", "steps": 200, "step": 200, "continues": "round1", "steps_before": 200}
+    assert "  continues round1 (the model had 200 steps before)" in training.describe("round2", state, alive=False)
 
 
 # --- the trained model in satyrn code ---------------------------------------------------------

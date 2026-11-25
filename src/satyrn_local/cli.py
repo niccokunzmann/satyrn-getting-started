@@ -315,10 +315,16 @@ def add_training_commands(sub: argparse._SubParsersAction) -> None:
     ts.add_argument("--data", type=Path, help=f"dataset (default: {training.DEFAULT_DATA})")
     ts.add_argument("--steps", type=int, default=training.STEPS, help=f"training steps (default {training.STEPS})")
     ts.add_argument("--lr", type=float, default=training.LR, help=f"learning rate (default {training.LR:g})")
-    ts.add_argument("--rank", type=int, default=training.RANK, help=f"LoRA rank (default {training.RANK})")
+    ts.add_argument("--rank", type=int, help=f"LoRA rank (default {training.RANK})")
     ts.add_argument("--name", help="name of the run folder in training/ (default: date and time + small)")
     ts.add_argument(
         "--threads", type=int, default=training.THREADS, help=f"CPU threads (default {training.THREADS}: 2/3 of all)"
+    )
+    ts.add_argument(
+        "--continue",
+        dest="continue_run",
+        metavar="RUN",
+        help="train the model of an earlier run further (its data, rank and adapter)",
     )
     tst = tsub.add_parser("status", help="state of the newest (or the named) training run")
     tst.add_argument("run", nargs="?", help="run folder name in training/")
