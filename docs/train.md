@@ -110,6 +110,62 @@ steps over a sixth of the dataset do not teach it the new Python. Real training 
 model is what makes a model that is better at new Python.
 ```
 
+### Train the same model further
+
+A trained model can be used and then trained again. `--continue` starts a new run from the
+adapter of an earlier one instead of from an untrained adapter:
+
+```bash
+satyrn train small --continue 20261124-small
+```
+
+The new run
+
+- takes the dataset, LoRA rank and seed of the run it continues, so the validation pieces are
+  the same and the losses compare,
+- trains on the pieces the earlier runs have not seen yet: the first run used pieces 1–200,
+  the second uses 201–400, and so on; after the whole dataset it starts again from the first,
+- has a learning rate schedule of its own (warm-up, then down to zero),
+- is a run of its own in `training/<run>/`, and at the end becomes the model `trained:<run>`.
+  The earlier run and its model stay as they are, so you can compare the two in `satyrn code`.
+
+`satyrn train status` shows which run a run continues and how many steps the model has had in
+all.
+
+### Is more training better?
+
+Measured with the example dataset: the first run of 200 steps, then two more rounds of 200
+with `--continue`, each on pieces the model had not seen yet:
+
+| Steps in all | 0 | 200 | 400 | 600 |
+| --- | --- | --- | --- | --- |
+| Validation loss | 2.145 | 1.930 | 1.876 | 1.830 |
+| Gain of the round | | 0.215 | 0.054 | 0.046 |
+| Training loss, mean of the round | | 2.002 | 1.924 | 1.892 |
+
+- **More training still helps here:** the validation loss falls in every round, on pieces the
+  model never trained on, so it is learning about the documents and not memorizing.
+- **Each round brings less.** The first 200 steps did four times as much as each of the next
+  two. A model learns the general form of the text (Markdown, the language of the Python docs)
+  first and the content slowly.
+- **The whole dataset is about six rounds.** 600 steps used half of the 1213 training pieces,
+  each once. After that the pieces repeat. Then watch the validation loss: when it stops falling
+  or rises while the training loss keeps falling, the model memorizes the pieces, and more
+  training makes it worse (*overfitting*). Stop there and use the run with the lowest
+  validation loss.
+- **A lower loss is not yet knowledge you can ask for.** Asked what PEP 750 adds or which
+  prefix template strings have, all three models answered fluently and wrongly. This training
+  only teaches the model to continue documents; answering questions about them is what
+  satyrn-models' next stages (SFT on questions and answers, then RL) are for, with a much
+  larger model.
+- **It does not make the model a coding agent.** In `satyrn check`, the model after 200 steps
+  made one real tool call (and wrote a wrong program); the model after 600 steps typed its tool
+  call into the answer as text and wrote on until the time limit. Asked five times each to
+  create a file with a tool, none of the three models called the tool. A model of half a billion
+  parameters is too small for agent work, however long it trains on documents.
+
+On this computer one round takes 35–47 minutes, a whole pass over the dataset about four hours.
+
 ### Watch a running training
 
 From another terminal:
@@ -149,9 +205,12 @@ The training stops with an error instead of carrying on with a broken model:
 | `--rank R` | 16 | LoRA rank: more extra weights with a higher rank |
 | `--name NAME` | date and time + `small` | name of the run folder in `training/` |
 | `--threads N` | two thirds of the CPUs | CPU threads for PyTorch; see [Speed](#speed) |
+| `--continue RUN` | | train the model of an earlier run further; see [Train the same model further](#train-the-same-model-further) |
 
 The data order and the starting weights of the adapter come from a fixed seed, so a run is
-repeatable. Its numbers can still differ slightly on another computer.
+repeatable: a second run from scratch gave the same validation losses to the last digit, the
+same adapter and the same model in Ollama, byte for byte (the same SHA-256). Its numbers can
+still differ slightly on another computer or with another `--threads`.
 
 ### Speed
 

@@ -336,3 +336,17 @@ Every request is recorded here as a todo, in the order it was given. The goals b
         a run of 0 s
 - [ ] pi lets the model write outside its working folder (`/tmp/sqrt.py` in the check); decide
       whether `satyrn code` should keep it inside the folder
+- [x] Check several times that a model can be trained; can a model be used after a training and
+      then be trained further? Is it good to train more?
+  - [x] Repeat the default training from scratch: same numbers as the first run? → yes, byte for
+        byte: same validation losses, adapter SHA-256 and Ollama digest
+  - [x] `satyrn train small --continue RUN`: start from a run's adapter, train on the pieces not
+        seen yet, same validation pieces; lineage in config.json and `satyrn train status` →
+        each round starts at exactly the validation loss the last one ended with
+  - [x] Use → continue → use: export the continued run and try it with `satyrn check` → the
+        models of all rounds are in Ollama side by side; all fail the check
+  - [x] Three rounds of 200 steps: does the validation loss keep falling? Answer in docs/train.md
+        → 2.145 → 1.930 → 1.876 → 1.830; each round brings less; no overfitting within the first
+        pass; factual answers stay wrong; no model calls tools reliably (0/5 each)
+- [ ] Compare with the untrained Qwen2.5-0.5B-Instruct in Ollama: does training on documents
+      weaken tool calls and chat, or was the base model just as weak?

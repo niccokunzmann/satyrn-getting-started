@@ -60,6 +60,8 @@ them. Everything needed for that lives in this one directory.
 17. **Trained models work with `satyrn code`.** A finished training is imported into the
     project's Ollama as `trained:<run>` and can be used like the prepared models (`-m`, `satyrn use`,
     `satyrn models`), with a chat template that supports tool calls.
+18. **Training can be continued.** A trained model can be used and then trained further
+    (`--continue`), on the data it has not seen yet, with comparable validation losses.
 
 ## Non-goals
 

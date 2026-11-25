@@ -24,7 +24,7 @@ Without the installed command, write `python3.14 satyrn.py COMMAND` in the proje
 | `data` | List the datasets `satyrn data` can create and which of them exist ([Create a dataset](data.md)). |
 | `data cpython [--python 3.14\|3.15]` | Create the example dataset `datasets/python3.15/cpt.jsonl` from pinned CPython docs and PEPs, and check it against its pinned SHA-256. |
 | `train` | Show the ways to train a model ([Train a model](train.md)). |
-| `train small [--data FILE] [--steps N] [--lr RATE] [--rank R] [--name NAME]` | Train a LoRA adapter for Qwen2.5-0.5B on the CPU; shows progress and the time remaining, saves to `training/<run>/`. |
+| `train small [--data FILE] [--steps N] [--lr RATE] [--rank R] [--name NAME] [--continue RUN]` | Train a LoRA adapter for Qwen2.5-0.5B on the CPU; shows progress and the time remaining, saves to `training/<run>/`. `--continue` trains the model of an earlier run further. |
 | `train status [RUN]` | Show the state of the newest (or the named) training run. |
 | `train export [RUN]` | Make a run's model usable with `satyrn code -m trained:<run>`: merge the adapter and import it into Ollama (also done at the end of `train small`). |
 | `pi ARGS…` | Run the project's pi with the project's settings; all arguments are passed on. |
