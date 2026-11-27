@@ -166,6 +166,111 @@ with `--continue`, each on pieces the model had not seen yet:
 
 On this computer one round takes 35–47 minutes, a whole pass over the dataset about four hours.
 
+### Train a regex model
+
+The documents of Python are too much for a small model on a CPU. A regex is a small language
+instead, and every answer can be checked. The [regex tasks](data.md#regex-tasks) train the same
+small model to write regexes for Python, grep and sed:
+
+```bash
+satyrn data regex
+satyrn train test --base                       # the untrained model, as a baseline
+satyrn train small --data datasets/regex/train.jsonl --steps 800 --lr 2e-4 --name 20261126-regex
+satyrn train test 20261126-regex               # the same test with the trained adapter
+```
+
+For a dataset of questions and answers (rows with `messages`), `satyrn train small` fine-tunes
+instead of continuing pretraining:
+
+- each row becomes a chat in Qwen's format, exactly the text Ollama sends to the model, without
+  a system message;
+- the loss counts only the answer, not the question: the model learns to answer, not to write
+  questions;
+- several short rows are packed into one piece of up to 512 tokens; a step trains on one piece,
+  about five tasks.
+
+`satyrn train test` lets a model answer every task of `datasets/regex/test.jsonl` (648 tasks,
+none of whose regexes is in the training split), always with the most likely next word, so the
+result is repeatable. The answer is taken out of its text the same way for every model (the
+first line or the inside of a code block, without quotes, backticks or a `grep -E '…'` around
+it), and it counts as right when it passes the task's tests: any regex that matches what it
+should and nothing else, not only the one in the dataset. It prints the share of right answers,
+by dialect, kind of task and source, and keeps each answer in `training/tests/`.
+
+| Command | Model |
+| --- | --- |
+| `satyrn train test RUN` | the base model with the adapter of a training run |
+| `satyrn train test --base` | the untrained Qwen2.5-0.5B-Instruct |
+| `satyrn train test --model NAME` | a model in the project's Ollama, for example `gpt-oss:20b` or `trained:<run>` |
+
+`--limit N` takes N tasks spread evenly over the file, for a quick look.
+
+#### Before and after
+
+A real run with the commands above: 800 steps of 2e-4 took 1:56 on the laptop CPU and read
+about a quarter of the training tasks (0.23 passes). The validation loss fell steadily:
+
+| After step | 0 | 200 | 400 | 600 | 800 |
+| --- | --- | --- | --- | --- | --- |
+| Validation loss | 1.439 | 0.713 | 0.579 | 0.458 | 0.417 |
+
+On the 648 test tasks the trained model writes a right regex **five times as often** as the
+untrained one:
+
+| Right answers | Untrained | Trained (800 steps) |
+| --- | ---: | ---: |
+| **All 648 tasks** | **40 (6 %)** | **200 (31 %)** |
+| Python (316) | 19 | 98 |
+| `grep -E` (185) | 13 | 58 |
+| `grep` (127) | 2 | 35 |
+| `sed -E` (10) | 3 | 6 |
+| `sed` (10) | 3 | 3 |
+| from a description (254) | 16 | 94 |
+| from a description and examples (229) | 14 | 74 |
+| from examples only (100) | 3 | 10 |
+| fix a wrong regex (16) | 0 | 5 |
+| translate between dialects (29) | 1 | 8 |
+| sed substitution (20) | 6 | 9 |
+
+- **It learned the dialects.** The untrained model wrote `\d`, `\w` or lookaheads in 69 of 127
+  basic `grep` answers, which grep does not know: 2 of them were right. The trained model writes
+  `[0-9]`, `[[:alnum:]_]` and `\{3\}` (4 answers still have `\d` or `\w`) and gets 35 right.
+- **It learned the form of the answer:** only the regex. 77 answers of the untrained model had
+  `re.compile(…)`, `import re` or an explanation around it, none of the trained model's.
+- **It is right in its own way.** Of the 200 right answers, 94 differ from the regex in the
+  dataset, for example `[A-Za-z]` for `[a-zA-Z]` or a different grouping. They count, because
+  they pass the tests.
+- **Its mistakes are real mistakes,** not format: a class where alternatives were meant
+  (`^[Jan|Feb|…]$` instead of `^(Jan|Feb|…)$`), a missing space (`\d{4}(?:\d{2}){3}` for card
+  numbers), half of a long description. It is best on the kinds of regex it trained most on
+  (this project's concepts, 49 %) and weakest on people's long descriptions from StructuredRegex
+  (21 %), on real-world regexes from Lingua Franca (17 %) and on finding a regex from examples
+  alone (10 %).
+- **The sed rows are few** (10 of each dialect in the test split), too few to say more than that
+  `sed -E` went from 3 to 6.
+- 14 tasks that the untrained model got right are now wrong; 174 are newly right.
+
+The model in Ollama (`trained:20261126-regex`, 16-bit GGUF) answers like the adapter in
+PyTorch: on 48 tasks spread over the test set (`--limit 48`) the adapter got 15 right and the
+Ollama model 14, and 34 of the 48 answers are the same character for character (the two compute
+with slightly different rounding).
+
+For comparison, `gpt-oss:20b`, the default model of `satyrn code`, on the same 48 tasks:
+
+| Model | Right of 48 | Time per task |
+| --- | ---: | ---: |
+| Qwen2.5-0.5B untrained | 2 | 2 s |
+| Qwen2.5-0.5B trained (800 steps) | 15 | 2 s |
+| gpt-oss:20b | 18 | 5 min |
+
+The 18 understate gpt-oss: `satyrn train test` lets a model write at most 512 tokens, and gpt-oss
+thinks before it answers. For 27 of the 48 tasks it gave no answer within that limit; of the 21
+answers it gave, 18 were right. It is better at regexes than the small model, but on this CPU it
+took four hours for 48 tasks, the small model under two minutes.
+
+This is a quarter of a pass. The validation loss was still falling, so more steps with
+`--continue` are likely to help; `satyrn train test` shows whether they do.
+
 ### Watch a running training
 
 From another terminal:

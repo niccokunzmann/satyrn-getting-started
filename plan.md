@@ -62,6 +62,13 @@ them. Everything needed for that lives in this one directory.
     `satyrn models`), with a chat template that supports tool calls.
 18. **Training can be continued.** A trained model can be used and then trained further
     (`--continue`), on the data it has not seen yet, with comparable validation losses.
+19. **A small model for a small language: regexes.** `satyrn data regex` creates a reproducible
+    dataset of regex tasks for Python, grep and sed (descriptions, examples, translations, fixes,
+    sed substitutions) from this project's generator and from freely licensed sources
+    (StructuredRegex, NL-RX, Lingua Franca), each answer checked with Python and the real grep and
+    sed. `satyrn train small` fine-tunes on it, and `satyrn train test` scores any model on the
+    test split, before and after training. Sources whose license or terms forbid it (Stack
+    Overflow, RegexLib, regex101) are not used.
 
 ## Non-goals
 

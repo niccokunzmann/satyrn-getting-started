@@ -350,3 +350,35 @@ Every request is recorded here as a todo, in the order it was given. The goals b
         pass; factual answers stay wrong; no model calls tools reliably (0/5 each)
 - [ ] Compare with the untrained Qwen2.5-0.5B-Instruct in Ollama: does training on documents
       weaken tool calls and chat, or was the base model just as weak?
+- [ ] What comparatively small language could a small model like the 0.5B one be useful in?
+  - [x] Answer with candidates and criteria → the task size matters more than the language size:
+        short one-shot answers that a program can check (SQLite SQL, regular expressions), trained
+        on checked question–answer pairs, used without tool calls
+- [x] How about regex (it does not need to be Turing complete)?
+  - [x] Probe: 12 regex tasks with matching and non-matching strings, 3 answers each, checked with
+        `re.fullmatch` → trained:20261124-small 10/36 answers right (8/12 tasks at least once),
+        round3 9/36 (6/12); many failures are the format (`re.compile(...)`, `import re`), the
+        rest real mistakes (`\b` instead of anchors, wrong group counts)
+- [x] Train the small model only on writing regexes (Python, grep, sed), checked with matching and
+      non-matching examples; how to gather a big training dataset for regex?
+  - [x] Answer: sources and a pipeline for the dataset
+  - [x] `satyrn data regex`: one regex tree → Python, grep -E, grep and sed; English
+        descriptions; matching strings and near misses; every answer checked with Python and the
+        real grep and sed (sed in --sandbox) → 15,533 training and 648 test tasks, none dropped,
+        byte for byte reproducible (also with another PYTHONHASHSEED), pinned in pins.toml
+  - [x] `satyrn train small` on question/answer rows (loss only on the answers), `satyrn train
+        test` to score a model (any right regex counts), before and after training
+        → 800 steps (1:56 h): validation loss 1.439 → 0.417; test 40/648 (6 %) → 200/648 (31 %);
+        the Ollama model matches the adapter (14 vs 15 of 48)
+  - [x] Test split: at most 3 rows with the same answer per dialect (984 → 648 rows), so the
+        concepts and sed substitutions do not decide half of the score
+  - [x] Compare with gpt-oss:20b on 48 tasks → 18/48, but 27 answers were empty (512-token limit,
+        it thinks first); 18 of its 21 answers right; 5 min per task against 2 s
+- [x] Look which regexes can also come from datasets, Stack Overflow and the like
+  - [x] Research (licenses checked) → used: StructuredRegex, NL-RX-Turk + KB13, Lingua Franca
+        (all MIT, pinned by commit); not used: Stack Overflow (CC BY-SA, dump terms forbid LLM
+        training), RegexLib/RegexEval (no license), regex101 (terms forbid scraping); engine test
+        suites (PCRE2, Rust, RE2, grep) test edge cases, not tasks
+  - [x] Documented in docs/data.md#regex-tasks
+- [ ] Optional: score gpt-oss:20b on the regex tests with a larger token limit or low reasoning
+      effort, so empty answers do not count against it (hours on this CPU)

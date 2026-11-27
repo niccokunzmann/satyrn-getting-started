@@ -23,9 +23,11 @@ Without the installed command, write `python3.14 satyrn.py COMMAND` in the proje
 | `verify` | Re-check every pinned archive, unpacked tool and downloaded model (accepted model versions pass). |
 | `data` | List the datasets `satyrn data` can create and which of them exist ([Create a dataset](data.md)). |
 | `data cpython [--python 3.14\|3.15]` | Create the example dataset `datasets/python3.15/cpt.jsonl` from pinned CPython docs and PEPs, and check it against its pinned SHA-256. |
+| `data regex` | Create the regex tasks `datasets/regex/` (Python, grep, sed; each answer checked with Python, grep and sed) from pinned sources, and check them against their pinned SHA-256 ([Regex tasks](data.md#regex-tasks)). |
 | `train` | Show the ways to train a model ([Train a model](train.md)). |
 | `train small [--data FILE] [--steps N] [--lr RATE] [--rank R] [--name NAME] [--continue RUN]` | Train a LoRA adapter for Qwen2.5-0.5B on the CPU; shows progress and the time remaining, saves to `training/<run>/`. `--continue` trains the model of an earlier run further. |
 | `train status [RUN]` | Show the state of the newest (or the named) training run. |
+| `train test [RUN] [--base] [--model NAME] [--data FILE] [--limit N]` | Score a model on the test tasks of `satyrn data regex`: a training run's adapter, the untrained model (`--base`) or a model in Ollama (`--model`); results in `training/tests/` ([Train a regex model](train.md#train-a-regex-model)). |
 | `train export [RUN]` | Make a run's model usable with `satyrn code -m trained:<run>`: merge the adapter and import it into Ollama (also done at the end of `train small`). |
 | `pi ARGS…` | Run the project's pi with the project's settings; all arguments are passed on. |
 | `interpreter ARGS…` | Run the project's Open Interpreter with the project's settings; all arguments are passed on. |
