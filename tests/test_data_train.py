@@ -310,9 +310,10 @@ def test_export_needs_a_run_with_an_adapter(project: Path) -> None:
     ("words", "index", "expected"),
     [
         (["satyrn", "da"], 1, ["data"]),
-        (["satyrn", "data", ""], 2, ["cpython"]),
+        (["satyrn", "data", ""], 2, ["cpython", "regex"]),
         (["satyrn", "train", "s"], 2, ["small", "status"]),
         (["satyrn", "train", "e"], 2, ["export"]),
+        (["satyrn", "train", "t"], 2, ["test"]),
         (["satyrn", "data", "cpython", "--python", ""], 4, ["3.14", "3.15"]),
         (["satyrn", "train", "small", "--st"], 3, ["--steps"]),
     ],

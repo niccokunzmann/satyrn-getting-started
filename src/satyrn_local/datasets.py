@@ -6,6 +6,8 @@ Separate from the coding setup: its own Python packages, git checkouts and tempo
 
 from __future__ import annotations
 
+import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -18,7 +20,10 @@ RUNNER = Path(__file__).parent / "runners" / "build_cpython_data.py"
 DATASETS = {
     "cpython": "what is new in a Python version: the CPython docs that changed, its PEPs and What's New "
     "(continued pretraining, as in satyrn-models)",
+    "regex": "writing regexes for Python, grep and sed: tasks with tests that check any answer "
+    "(questions and answers, for fine-tuning)",
 }
+REGEX_FILES = ("train", "test")
 VERSIONS = ("3.15", "3.14")
 STEPS = ("collect", "inputs", "cpt")
 
@@ -92,10 +97,77 @@ def check(layout: Layout, pins: Pins, version: str, part: Path, target: Path) ->
     return 1
 
 
+def regex_output(layout: Layout, split: str) -> Path:
+    return layout.datasets / "regex" / f"{split}.jsonl"
+
+
+def build_regex(layout: Layout, pins: Pins) -> int:
+    """`satyrn data regex`: in this process, with the standard library, grep and sed (docs/data.md)."""
+    from .regex import build  # noqa: PLC0415 - only this command needs it
+
+    target = layout.datasets / "regex"
+    print(f"dataset regex -> {target.relative_to(layout.root)}/")
+    print("sources (git commits from pins.toml):")
+    folders = {}
+    for name, source in pins.data["data"]["regex"]["sources"].items():
+        folder = layout.data_dir / "sources" / name
+        gitpin.checkout(source["repo"], source["commit"], folder, source["paths"])
+        folders[name] = folder
+    print("making tasks (about a minute):")
+    train, test, report = build.build(folders, lambda line: print(line, flush=True))
+    dropped = sum(report["dropped: answer failed its tests"].values())
+    print(
+        f"  every answer checked with Python, {report['tools']['grep']} and {report['tools']['sed']}; {dropped} dropped"
+    )
+    part = layout.data_dir / "build" / "regex"
+    build.write(part / "train.jsonl", train)
+    build.write(part / "test.jsonl", test)
+    (part / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    licenses = part / "licenses"
+    licenses.mkdir(parents=True, exist_ok=True)
+    for name, source in pins.data["data"]["regex"]["sources"].items():
+        shutil.copyfile(folders[name] / source["license"], licenses / f"{name}.txt")
+    failed = 0
+    for split in REGEX_FILES:
+        digest, rows = sha256_file(part / f"{split}.jsonl"), count_rows(part / f"{split}.jsonl")
+        expected = pins.data["data"]["regex"][split]["sha256"]
+        print(f"{split}.jsonl: {rows} rows, {(part / f'{split}.jsonl').stat().st_size / 1e6:.1f} MB")
+        if digest == expected:
+            print(f"  reproduced: identical to the pinned build (sha256 {digest[:8]}…)")
+            continue
+        failed = 1
+        if expected:
+            print(f"  FAIL: sha256 {digest} differs from the pinned {expected}")
+        print(
+            f'  to pin this build, set  {split} = {{ sha256 = "{digest}", rows = {rows} }}'
+            "  in [data.regex] of pins.toml"
+        )
+    if failed:
+        print(f"kept in {part.relative_to(layout.root)}; see docs/data.md#how-it-is-made")
+        return 1
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(part, target)
+    print(f"done: {target.relative_to(layout.root)}/ (train.jsonl, test.jsonl, report.json, licenses/)")
+    return 0
+
+
+def regex_state(layout: Layout, pins: Pins) -> str:
+    files = [regex_output(layout, s) for s in REGEX_FILES]
+    if not all(f.is_file() for f in files):
+        return "not created yet"
+    if all(sha256_file(f) == pins.data["data"]["regex"][s]["sha256"] for f, s in zip(files, REGEX_FILES, strict=True)):
+        return f"created, {count_rows(files[0])} training and {count_rows(files[1])} test tasks, matches its pin"
+    return "created, but differs from its pin"
+
+
 def show(layout: Layout, pins: Pins) -> int:
     print("datasets satyrn data can create:\n")
     for name, what in DATASETS.items():
         print(f"  {name}: {what}")
+        if name == "regex":
+            print(f"    satyrn data regex{'':15s} datasets/regex/: {regex_state(layout, pins)}")
+            continue
         for version in VERSIONS:
             target = output(layout, version)
             if not target.is_file():

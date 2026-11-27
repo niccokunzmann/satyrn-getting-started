@@ -80,6 +80,32 @@ paths = ["/peps/*.rst"]
 "3.15" = { sha256 = "ba1524ed38a22639db0b36c8d924bd84f8f0907e97db2dd6026259f8771fefde", rows = 156 }
 "3.14" = { sha256 = "798b97943e8f82e8183ba5717adb45e7bc738592212aefb3cbd13089d55963c3", rows = 144 }
 
+# satyrn data regex: tasks for writing regexes (Python, grep, sed). Built with the standard
+# library only, and checked with the grep and sed of this computer. Sources besides its own
+# generator, each a git commit (licenses in datasets/regex/licenses/ once built):
+[data.regex.sources.structured-regex]  # Ye et al. 2020: descriptions with examples, MIT
+repo = "https://github.com/xiye17/StructuredRegex.git"
+commit = "7d49aa2a176677fb5a553b05a6ad7d8fc24bc37d"
+paths = ["/data/raw/", "/LICENSE"]
+license = "LICENSE"
+
+[data.regex.sources.deep-regex]  # Locascio et al. 2016: NL-RX-Turk and KB13, MIT
+repo = "https://github.com/nicholaslocascio/deep-regex.git"
+commit = "096490db7f4b0394fbb46b914cb35a0aa1cba29c"
+paths = ["/datasets/NL-RX-Turk/", "/datasets/KB13/", "/datasets/license.md"]
+license = "datasets/license.md"
+
+[data.regex.sources.lingua-franca]  # Davis et al. 2019: regexes of real packages, MIT
+repo = "https://github.com/davisjam/LinguaFranca-FSE19.git"
+commit = "f480f7f7617d7edf813fe4cba6657a853577501b"
+paths = ["/data/production-regexes/uniq-regexes-8.json", "/LICENSE"]
+license = "LICENSE"
+
+# SHA-256 of the two files `satyrn data regex` makes; a different result fails.
+[data.regex]
+train = { sha256 = "9c0891a7c739fa46d9787cabd52b0c3821030794bd171a2a434dcd3eea3619b9", rows = 15533 }
+test = { sha256 = "a99d12cb8bbfc859ed75a78c4b24be38274e50a81ecfbc37c0cca66969abf67b", rows = 648 }
+
 # --- satyrn train small: a small LoRA training on the CPU (docs/train.md) -----------------
 # Python packages: config/train/requirements.txt (version and SHA-256 of each).
 # The model at a Hugging Face revision (a git commit), with the SHA-256 of each file.

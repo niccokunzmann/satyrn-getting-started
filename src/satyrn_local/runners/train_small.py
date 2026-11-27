@@ -1,9 +1,18 @@
 """A small LoRA training on the CPU. Runs in `satyrn train`'s own venv (docs/train.md).
 
-Continued pretraining as in satyrn-models' first stage, made small enough for a CPU: the dataset's
-documents are joined and cut into pieces of ``--seq-len`` tokens, about one in ten (at most 16) is
-kept back for validation, and a LoRA adapter (same target modules and alpha = 2 * rank as
-satyrn-models) learns to predict the training pieces, one piece per step.
+Two kinds of dataset:
+
+- documents (rows with "text"): continued pretraining as in satyrn-models' first stage, made
+  small enough for a CPU. The documents are joined and cut into pieces of ``--seq-len`` tokens;
+  the model learns to predict all of them.
+- questions and answers (rows with "messages", such as `satyrn data regex`): fine-tuning. Each
+  row becomes a chat in Qwen's format, exactly as Ollama sends it (no system message), and the
+  model learns only the answers: the loss ignores the prompt tokens. Short rows are packed
+  together into pieces of up to ``--seq-len`` tokens.
+
+About one in ten pieces (at most 16) is kept back for validation, and a LoRA adapter (same
+target modules and alpha = 2 * rank as satyrn-models) learns from the training pieces, one
+piece per step.
 
 With ``--resume ADAPTER`` the run continues the training of an earlier run: it starts from that
 adapter instead of an untrained one, and ``--offset`` skips the pieces the earlier runs trained on.
@@ -68,19 +77,57 @@ def finite(value: float, what: str) -> float:
     return value
 
 
-def pieces(data: Path, tokenizer: object, seq_len: int, seed: int) -> tuple[list, list, int, int]:
-    rows = [json.loads(line) for line in data.read_text(encoding="utf-8").splitlines() if line.strip()]
-    if not rows:
-        raise ValueError(f"{data} has no rows")
+IGNORE = -100  # label of tokens the loss leaves out
+
+
+def chat(prompt: str) -> str:
+    """The text the model sees for a question: Qwen's chat format, as Ollama's template renders it."""
+    return f"<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+
+
+def document_blocks(rows: list[dict], tokenizer: object, seq_len: int) -> tuple[list, int]:
     ids: list[int] = []
     for row in rows:
         ids += tokenizer(row["text"])["input_ids"] + [tokenizer.eos_token_id]
-    blocks = [ids[i : i + seq_len] for i in range(0, len(ids) - seq_len + 1, seq_len)]
+    return [(ids[i : i + seq_len], ids[i : i + seq_len]) for i in range(0, len(ids) - seq_len + 1, seq_len)], len(ids)
+
+
+def chat_blocks(rows: list[dict], tokenizer: object, seq_len: int, seed: int) -> tuple[list, int]:
+    """Rows packed into pieces of up to ``seq_len`` tokens; labels only for the answers."""
+    rows = list(rows)
+    random.Random(seed).shuffle(rows)  # noqa: S311 - a repeatable order, not a secret
+    blocks, ids, labels, n_tokens = [], [], [], 0
+    for row in rows:
+        user, assistant = row["messages"][0]["content"], row["messages"][1]["content"]
+        prompt = tokenizer(chat(user))["input_ids"]
+        answer = tokenizer(assistant + "<|im_end|>\n")["input_ids"]
+        if len(prompt) + len(answer) > seq_len:
+            continue
+        if len(ids) + len(prompt) + len(answer) > seq_len:
+            blocks.append((ids, labels))
+            ids, labels = [], []
+        ids += prompt + answer
+        labels += [IGNORE] * len(prompt) + answer
+        n_tokens += len(prompt) + len(answer)
+    if ids:
+        blocks.append((ids, labels))
+    return blocks, n_tokens
+
+
+def pieces(data: Path, tokenizer: object, seq_len: int, seed: int) -> tuple[list, list, int, int, str]:
+    rows = [json.loads(line) for line in data.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if not rows:
+        raise ValueError(f"{data} has no rows")
+    kind = "questions" if "messages" in rows[0] else "documents"
+    if kind == "questions":
+        blocks, n_tokens = chat_blocks(rows, tokenizer, seq_len, seed)
+    else:
+        blocks, n_tokens = document_blocks(rows, tokenizer, seq_len)
     if len(blocks) < 2:
         raise ValueError(f"{data} is too small: fewer than two pieces of {seq_len} tokens")
     random.Random(seed).shuffle(blocks)  # noqa: S311 - a repeatable data order, not a secret
     n_valid = max(1, min(MAX_VALIDATION_PIECES, len(blocks) // 10))
-    return blocks[n_valid:], blocks[:n_valid], len(rows), len(ids)
+    return blocks[n_valid:], blocks[:n_valid], len(rows), n_tokens, kind
 
 
 def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - one straight training story
@@ -94,11 +141,12 @@ def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - o
     torch.manual_seed(args.seed)
     torch.set_num_threads(args.threads)
     tokenizer = AutoTokenizer.from_pretrained(args.model)
-    train_blocks, valid_blocks, n_docs, n_tokens = pieces(args.data, tokenizer, args.seq_len, args.seed)
+    train_blocks, valid_blocks, n_docs, n_tokens, kind = pieces(args.data, tokenizer, args.seq_len, args.seed)
     epochs = args.steps / len(train_blocks)
     report.say(
-        f"dataset: {n_docs} documents, {n_tokens:,} tokens -> {len(train_blocks)} training and "
-        f"{len(valid_blocks)} validation pieces of {args.seq_len} tokens ({epochs:.2f} passes in {args.steps} steps)"
+        f"dataset: {n_docs} {kind}, {n_tokens:,} tokens -> {len(train_blocks)} training and "
+        f"{len(valid_blocks)} validation pieces of {'up to ' if kind == 'questions' else ''}{args.seq_len} tokens "
+        f"({epochs:.2f} passes in {args.steps} steps)"
     )
     first_piece = args.offset % len(train_blocks) + 1
     last_piece = (args.offset + args.steps - 1) % len(train_blocks) + 1
@@ -131,7 +179,9 @@ def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - o
     def validate() -> float:
         model.eval()
         with torch.no_grad():
-            losses = [model(input_ids=torch.tensor([b]), labels=torch.tensor([b])).loss.item() for b in valid_blocks]
+            losses = [
+                model(input_ids=torch.tensor([i]), labels=torch.tensor([lab])).loss.item() for i, lab in valid_blocks
+            ]
         model.train()
         return finite(sum(losses) / len(losses), "the validation loss")
 
@@ -151,8 +201,8 @@ def train(args: argparse.Namespace, report: Report) -> int:  # noqa: PLR0915 - o
     model.train()
     for step in range(1, args.steps + 1):
         tick = time.monotonic()
-        block = torch.tensor([train_blocks[(args.offset + step - 1) % len(train_blocks)]])
-        loss = model(input_ids=block, labels=block).loss
+        ids, labels = train_blocks[(args.offset + step - 1) % len(train_blocks)]
+        loss = model(input_ids=torch.tensor([ids]), labels=torch.tensor([labels])).loss
         value = finite(loss.item(), f"the loss at step {step}")
         loss.backward()
         torch.nn.utils.clip_grad_norm_(params, 1.0)

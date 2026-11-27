@@ -309,6 +309,7 @@ def add_training_commands(sub: argparse._SubParsersAction) -> None:
     dsub = d.add_subparsers(dest="dataset")
     dc = dsub.add_parser("cpython", help="the example: what is new in Python, from the CPython docs and PEPs")
     dc.add_argument("--python", choices=datasets.VERSIONS, default=datasets.VERSIONS[0], help="Python version")
+    dsub.add_parser("regex", help="writing regexes for Python, grep and sed, with tests that check the answers")
     tr = sub.add_parser("train", help="train a model on a dataset (see: satyrn train)")
     tsub = tr.add_subparsers(dest="training")
     ts = tsub.add_parser("small", help="a small LoRA training on the CPU: checks dataset and training")
@@ -328,6 +329,14 @@ def add_training_commands(sub: argparse._SubParsersAction) -> None:
     )
     tst = tsub.add_parser("status", help="state of the newest (or the named) training run")
     tst.add_argument("run", nargs="?", help="run folder name in training/")
+    tt = tsub.add_parser("test", help="score a model on the test tasks of satyrn data regex")
+    tt.add_argument("run", nargs="?", help="a training run in training/ (its adapter)")
+    tt.add_argument("--base", action="store_true", help="the untrained model of satyrn train small")
+    tt.add_argument("--model", help="a model in the project's Ollama instead, for example gpt-oss:20b")
+    tt.add_argument("--data", type=Path, help=f"test tasks (default: {training.TEST_DATA})")
+    tt.add_argument("--limit", type=int, help="only N tasks, spread evenly over the file")
+    tt.add_argument("--rescore", action="store_true", help="check the saved answers again, without answering")
+    tt.add_argument("--threads", type=int, default=training.THREADS, help=f"CPU threads (default {training.THREADS})")
     te = tsub.add_parser("export", help="make a run's model usable with satyrn code -m trained:<run>")
     te.add_argument("run", nargs="?", help="run folder name in training/ (default: the newest with an adapter)")
 
@@ -406,6 +415,8 @@ def build_parser() -> argparse.ArgumentParser:
 def cmd_data(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
     if args.dataset == "cpython":
         return datasets.build_cpython(layout, pins, args.python)
+    if args.dataset == "regex":
+        return datasets.build_regex(layout, pins)
     return datasets.show(layout, pins)
 
 
@@ -416,6 +427,8 @@ def cmd_train(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
         return training.status(layout, args.run)
     if args.training == "export":
         return training.export(layout, pins, args.run)
+    if args.training == "test":
+        return training.test(layout, pins, args)
     return training.show(layout)
 
 

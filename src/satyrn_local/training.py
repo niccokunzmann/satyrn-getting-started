@@ -2,6 +2,7 @@
 
 `satyrn train small` runs a small LoRA training on the CPU (runners/train_small.py) in a venv of
 its own, with a pinned model; its tools live in .runtime/train/, its runs in training/<run>/.
+`satyrn train test` scores a model on the test split of a question dataset (satyrn data regex).
 `satyrn train export` merges a run's adapter into the model and imports it into the project's
 Ollama as ``trained:<run>``, so that `satyrn code -m trained:<run>` can use it.
 Real training needs a rented NVIDIA GPU and is not part of satyrn yet.
@@ -24,6 +25,8 @@ from .layout import IS_WINDOWS, Asset, Layout, Pins
 
 RUNNER = Path(__file__).parent / "runners" / "train_small.py"
 EXPORTER = Path(__file__).parent / "runners" / "export_model.py"
+ANSWERER = Path(__file__).parent / "runners" / "answer_tasks.py"
+TEST_DATA = "datasets/regex/test.jsonl"
 PREFIX = "trained:"  # Ollama name of a run's model: trained:<run>
 MODEL_FILE = "model.json"  # in training/<run>/ once the run's model is in Ollama
 # The Qwen2.5 defaults from the model's generation_config.json.
@@ -306,3 +309,94 @@ def show(layout: Layout) -> int:
     if not (layout.root / DEFAULT_DATA).is_file():
         print("\nFirst create the dataset: satyrn data cpython")
     return 0
+
+
+def test(layout: Layout, pins: Pins, args: argparse.Namespace) -> int:
+    """Answer every task of a test file with a model and check the answers (docs/train.md)."""
+    from .regex import score  # noqa: PLC0415 - only this command needs it
+
+    if sum(bool(x) for x in (args.run, args.base, args.model)) != 1:
+        raise SystemExit("name one model: a training run (satyrn train test RUN), --base or --model NAME")
+    data = (args.data or layout.root / TEST_DATA).resolve()
+    if not data.is_file():
+        raise SystemExit(f"test tasks {data} not found; create them first: satyrn data regex")
+    tasks = [json.loads(line) for line in data.read_text(encoding="utf-8").splitlines() if line.strip()]
+    every = len(tasks)
+    if args.limit and args.limit < every:  # an even spread over the file: every source, every kind
+        tasks = [tasks[i * every // args.limit] for i in range(args.limit)]
+    label = args.run or ("base" if args.base else re.sub(r"[^\w.-]", "_", args.model))
+    stem = f"{label}-{data.stem}" + (f"-{len(tasks)}" if len(tasks) < every else "")
+    folder = layout.training / "tests"
+    folder.mkdir(parents=True, exist_ok=True)
+
+    def file(kind: str) -> Path:
+        return folder / f"{stem}.{kind}"
+
+    answers = file("answers.jsonl")
+    print(f"{len(tasks)} tasks from {data.relative_to(layout.root) if data.is_relative_to(layout.root) else data}")
+    if args.rescore:
+        if not answers.is_file():
+            raise SystemExit(f"no saved answers to check again: {answers}")
+        print(f"checking the saved answers again: {answers.relative_to(layout.root)}")
+        outputs = {e["id"]: e["output"] for e in map(json.loads, answers.read_text(encoding="utf-8").splitlines())}
+    elif args.model:
+        outputs = _ollama_answers(layout, pins, args.model, tasks, answers)
+    else:
+        asked = data
+        if len(tasks) < every:
+            asked = file("tasks.jsonl")
+            asked.write_text("".join(json.dumps(x) + "\n" for x in tasks), encoding="utf-8")
+        outputs = _torch_answers(layout, pins, args, asked, answers)
+    print("checking the answers with Python, grep and sed")
+    results = []
+    for task in tasks:
+        output = outputs.get(task["id"], "")
+        answer, ok = score.right(task, output)
+        results.append(
+            {k: task[k] for k in ("id", "source", "task", "dialect")}
+            | {"output": output, "answer": answer, "right": ok}
+        )
+    with file("results.jsonl").open("w", encoding="utf-8") as handle:
+        for r in results:
+            handle.write(json.dumps(r) + "\n")
+    summary = score.summary(results) | {"model": label, "data": str(data), "data_sha256": fetch.sha256_file(data)}
+    file("summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    print(score.table(summary))
+    print(f"each answer: {file('results.jsonl').relative_to(layout.root)}")
+    return 0
+
+
+def _torch_answers(layout: Layout, pins: Pins, args: argparse.Namespace, data: Path, answers: Path) -> dict[str, str]:
+    """Answers of the base model, or of the base model with a run's adapter, in PyTorch (greedy)."""
+    adapter = None
+    if args.run:
+        adapter = layout.training / args.run / "adapter"
+        if not (adapter / "adapter_config.json").is_file():
+            raise SystemExit(f"run {args.run} has no adapter; see: satyrn train status")
+    python, model = prepare(layout, pins)
+    command = [str(python), "-P", str(ANSWERER), "--model", str(model), "--data", str(data), "--out", str(answers)]
+    command += ["--threads", str(args.threads), *(["--adapter", str(adapter)] if adapter else [])]
+    print(f"answering with {'the adapter of ' + args.run if args.run else 'the untrained model'} (greedy):")
+    sys.stdout.flush()
+    if subprocess.run(command, env=env(layout), check=False).returncode:
+        raise SystemExit("answering failed; see the lines above")
+    return {e["id"]: e["output"] for e in map(json.loads, answers.read_text(encoding="utf-8").splitlines())}
+
+
+def _ollama_answers(layout: Layout, pins: Pins, model: str, tasks: list[dict], answers: Path) -> dict[str, str]:
+    """Answers from a model in the project's Ollama: temperature 0, so they are repeatable."""
+    outputs = {}
+    with ollama.running(layout, pins), answers.open("w", encoding="utf-8") as handle:
+        for i, task in enumerate(tasks, 1):
+            body = {
+                "model": model,
+                "messages": [task["messages"][0]],
+                "stream": False,
+                "options": {"temperature": 0, "seed": 0, "num_predict": 512},
+            }
+            output = ollama.api(pins, "/api/chat", body, timeout=1800)["message"]["content"]
+            outputs[task["id"]] = output
+            handle.write(json.dumps({"id": task["id"], "output": output}) + "\n")
+            if i % 10 == 0 or i == len(tasks):
+                print(f"  answered {i}/{len(tasks)}", flush=True)
+    return outputs
